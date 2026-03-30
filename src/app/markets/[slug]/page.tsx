@@ -1,0 +1,101 @@
+import { notFound } from "next/navigation";
+import { MarketChart } from "@/components/market-chart";
+import { StatPill } from "@/components/stat-pill";
+import { TradePanel } from "@/components/trade-panel";
+import { getMarketBySlug } from "@/lib/data/service";
+import {
+  formatCompactNumber,
+  formatDateTime,
+  formatProbability,
+} from "@/lib/format";
+
+export default async function MarketDetailPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const market = await getMarketBySlug(slug);
+
+  if (!market) {
+    notFound();
+  }
+
+  return (
+    <div className="space-y-6">
+      <section className="panel rounded-[24px] px-6 py-6 sm:px-7">
+        <div className="eyebrow">{market.category}</div>
+        <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="max-w-3xl">
+            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+              {market.question}
+            </h1>
+            <p className="mt-4 text-sm leading-7 text-[color:var(--muted)] sm:text-base">
+              {market.description}
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:w-[280px] lg:grid-cols-1">
+            <StatPill label="Yes" value={formatProbability(market.currentProbability)} tone="success" />
+            <StatPill label="No" value={formatProbability(1 - market.currentProbability)} tone="danger" />
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-[1.4fr_0.8fr]">
+        <div className="space-y-6">
+          <MarketChart points={market.chart} />
+          <div className="panel rounded-[22px] p-5">
+            <div className="eyebrow">Rules</div>
+            <div className="mt-4 grid gap-5 md:grid-cols-2">
+              <div>
+                <div className="text-sm font-semibold">Resolution criteria</div>
+                <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">
+                  {market.resolutionCriteria}
+                </p>
+              </div>
+              <div>
+                <div className="text-sm font-semibold">Resolution source</div>
+                <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">
+                  {market.resolutionSource}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <TradePanel
+            marketId={market.id}
+            probability={market.currentProbability}
+            ammState={market.ammState}
+          />
+          <div className="panel rounded-[22px] p-5">
+            <div className="eyebrow">Market Stats</div>
+            <div className="mt-4 grid gap-3 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-[color:var(--muted)]">Status</span>
+                <span className="font-semibold capitalize">{market.status}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[color:var(--muted)]">Volume</span>
+                <span className="font-semibold">{formatCompactNumber(market.volume)}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[color:var(--muted)]">Traders</span>
+                <span className="font-semibold">{market.tradersCount}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[color:var(--muted)]">Closes</span>
+                <span className="font-semibold">{formatDateTime(market.closeTime)}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[color:var(--muted)]">Resolve by</span>
+                <span className="font-semibold">{formatDateTime(market.resolveByTime)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
