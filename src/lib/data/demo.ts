@@ -25,18 +25,21 @@ export const demoUsers: UserSummary[] = [
     name: "Alex Chen",
     email: "alex@ubcrocket.com",
     role: "admin",
+    bankruptcyCount: 0,
   },
   {
     id: demoUserIds.maya,
     name: "Maya Patel",
     email: "maya@ubcrocket.com",
     role: "member",
+    bankruptcyCount: 0,
   },
   {
     id: demoUserIds.dylan,
     name: "Dylan Lee",
     email: "dylan@ubcrocket.com",
     role: "member",
+    bankruptcyCount: 0,
   },
 ];
 

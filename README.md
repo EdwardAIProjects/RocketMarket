@@ -74,6 +74,7 @@ In local mode:
 - the first local account becomes an admin automatically
 - the app starts from seeded fake data
 - create/trade/close/resolve flows persist to a local sandbox state file instead of Postgres
+- bankruptcy resets persist locally and still mark leaderboard names with a running bankruptcy count
 - the sandbox state lives at `LOCAL_STATE_PATH` or `/tmp/rocketmarket-local.json` by default
 - Google OAuth is not required
 
@@ -107,6 +108,7 @@ npm run local:reset
 - Market detail page with chart and trade preview
 - Portfolio and leaderboard views
 - Admin market queue and resolution UI
+- Portfolio bankruptcy reset flow with persistent bankruptcy counts on the leaderboard
 - Typed market engine with unit tests
 - Postgres schema covering auth, markets, trades, positions, and ledger entries
 - API routes for listing markets, creating a market, quoting trades, closing, resolving, portfolio, and leaderboard

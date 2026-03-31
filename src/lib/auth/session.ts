@@ -43,6 +43,7 @@ export async function getCurrentUser() {
       role: localUser.role,
       startingBalance: localUser.startingBalance.toFixed(2),
       cashBalance: localUser.cashBalance.toFixed(2),
+      bankruptcyCount: localUser.bankruptcyCount,
       createdAt: new Date(localUser.createdAt),
     };
   }

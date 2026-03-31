@@ -119,6 +119,7 @@ function userToSummary(user: UserRow): UserSummary {
     name: user.name ?? user.email.split("@")[0] ?? "Unknown",
     email: user.email,
     role: user.role,
+    bankruptcyCount: user.bankruptcyCount,
     imageUrl: user.image ?? undefined,
   };
 }
@@ -266,7 +267,16 @@ function localUserToSummary(user: LocalUser): UserSummary {
     name: user.name,
     email: user.email,
     role: user.role,
+    bankruptcyCount: user.bankruptcyCount,
   };
+}
+
+export function formatLeaderboardUserName(user: UserSummary) {
+  if (user.bankruptcyCount <= 0) {
+    return user.name;
+  }
+
+  return `${user.name} (bankruptcy x${user.bankruptcyCount})`;
 }
 
 function mapLocalMarket(state: LocalState, market: LocalMarket): Market {
@@ -314,6 +324,48 @@ function getLocalPosition(
   return state.positions.find(
     (position) => position.userId === userId && position.marketId === marketId,
   );
+}
+
+function buildLocalPortfolio(state: LocalState, user: LocalUser): PortfolioSnapshot {
+  const userPositions = state.positions.filter((position) => position.userId === user.id);
+  const positionsView = userPositions
+    .map((position) => {
+      const market = state.markets.find((entry) => entry.id === position.marketId);
+      if (!market) {
+        return null;
+      }
+
+      return {
+        marketId: market.id,
+        marketSlug: market.slug,
+        question: market.question,
+        yesShares: position.yesShares,
+        noShares: position.noShares,
+        avgYesPrice: position.avgYesPrice,
+        avgNoPrice: position.avgNoPrice,
+        currentProbability: market.currentProbability,
+      };
+    })
+    .filter((entry): entry is NonNullable<typeof entry> => entry !== null)
+    .filter((entry) => entry.yesShares > 0 || entry.noShares > 0);
+
+  const estimatedValue =
+    user.cashBalance +
+    positionsView.reduce(
+      (sum, position) =>
+        sum +
+        position.yesShares * position.currentProbability +
+        position.noShares * (1 - position.currentProbability),
+      0,
+    );
+
+  return {
+    user: localUserToSummary(user),
+    cashBalance: user.cashBalance,
+    estimatedValue,
+    realizedPnl: userPositions.reduce((sum, position) => sum + position.realizedPnl, 0),
+    positions: positionsView,
+  };
 }
 
 export async function listMarkets() {
@@ -1173,46 +1225,7 @@ export async function getPortfolio(userId?: string): Promise<PortfolioSnapshot> 
     if (!user) {
       throw new Error("User not found.");
     }
-
-    const userPositions = state.positions.filter((position) => position.userId === userId);
-    const positionsView = userPositions
-      .map((position) => {
-        const market = state.markets.find((entry) => entry.id === position.marketId);
-        if (!market) {
-          return null;
-        }
-
-        return {
-          marketId: market.id,
-          marketSlug: market.slug,
-          question: market.question,
-          yesShares: position.yesShares,
-          noShares: position.noShares,
-          avgYesPrice: position.avgYesPrice,
-          avgNoPrice: position.avgNoPrice,
-          currentProbability: market.currentProbability,
-        };
-      })
-      .filter((entry): entry is NonNullable<typeof entry> => entry !== null)
-      .filter((entry) => entry.yesShares > 0 || entry.noShares > 0);
-
-    const estimatedValue =
-      user.cashBalance +
-      positionsView.reduce(
-        (sum, position) =>
-          sum +
-          position.yesShares * position.currentProbability +
-          position.noShares * (1 - position.currentProbability),
-        0,
-      );
-
-    return {
-      user: localUserToSummary(user),
-      cashBalance: user.cashBalance,
-      estimatedValue,
-      realizedPnl: userPositions.reduce((sum, position) => sum + position.realizedPnl, 0),
-      positions: positionsView,
-    };
+    return buildLocalPortfolio(state, user);
   }
 
   if (isDemoMode()) {
@@ -1284,6 +1297,81 @@ export async function getPortfolio(userId?: string): Promise<PortfolioSnapshot> 
     ),
     positions: positionsView,
   };
+}
+
+export async function declareBankruptcy(actorUserId: string): Promise<PortfolioSnapshot> {
+  if (isLocalMode()) {
+    return withLocalState(async (state) => {
+      const actor = state.users.find((user) => user.id === actorUserId);
+
+      if (!actor) {
+        throw new Error("User not found.");
+      }
+
+      const removedPositions = state.positions.filter((position) => position.userId === actor.id);
+      const previousCashBalance = actor.cashBalance;
+      const removedPositionCount = removedPositions.length;
+
+      state.positions = state.positions.filter((position) => position.userId !== actor.id);
+      actor.cashBalance = actor.startingBalance;
+      actor.bankruptcyCount += 1;
+
+      state.ledgerEntries.push({
+        id: randomUUID(),
+        userId: actor.id,
+        type: "manual_adjustment",
+        amount: actor.startingBalance - previousCashBalance,
+        note: `Bankruptcy reset #${actor.bankruptcyCount}; cleared ${removedPositionCount} positions`,
+        createdAt: nowIso(),
+      });
+
+      return buildLocalPortfolio(state, actor);
+    });
+  }
+
+  if (isDemoMode()) {
+    throw new Error("Bankruptcy is unavailable in demo mode.");
+  }
+
+  const db = getRequiredDb();
+
+  await db.transaction(async (tx) => {
+    await tx.execute(sql`select id from ${users} where ${users.id} = ${actorUserId} for update`);
+
+    const actor = (await tx.select().from(users).where(eq(users.id, actorUserId)).limit(1))[0];
+
+    if (!actor) {
+      throw new Error("User not found.");
+    }
+
+    const actorPositions = await tx
+      .select()
+      .from(positions)
+      .where(eq(positions.userId, actorUserId));
+
+    const previousCashBalance = parseNumber(actor.cashBalance);
+    const startingBalance = parseNumber(actor.startingBalance);
+    const nextBankruptcyCount = actor.bankruptcyCount + 1;
+
+    await tx.delete(positions).where(eq(positions.userId, actorUserId));
+
+    await tx
+      .update(users)
+      .set({
+        cashBalance: startingBalance.toFixed(2),
+        bankruptcyCount: nextBankruptcyCount,
+      })
+      .where(eq(users.id, actorUserId));
+
+    await tx.insert(ledgerEntries).values({
+      userId: actorUserId,
+      type: "manual_adjustment",
+      amount: (startingBalance - previousCashBalance).toFixed(2),
+      note: `Bankruptcy reset #${nextBankruptcyCount}; cleared ${actorPositions.length} positions`,
+    });
+  });
+
+  return getPortfolio(actorUserId);
 }
 
 export async function getLeaderboard(): Promise<LeaderboardEntry[]> {

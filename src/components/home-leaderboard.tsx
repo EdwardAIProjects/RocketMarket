@@ -32,7 +32,14 @@ export function HomeLeaderboard({
               <div className="text-xs uppercase tracking-[0.18em] text-[color:var(--muted)]">
                 #{index + 1}
               </div>
-              <div className="truncate text-sm font-semibold">{entry.user.name}</div>
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <span className="truncate text-sm font-semibold">{entry.user.name}</span>
+                {entry.user.bankruptcyCount > 0 ? (
+                  <span className="shrink-0 rounded-full border border-rose-500/40 bg-rose-500/14 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-rose-100">
+                    Bankrupt x{entry.user.bankruptcyCount}
+                  </span>
+                ) : null}
+              </div>
               <div className="mt-1 text-xs text-[color:var(--muted)]">
                 {entry.wins}W / {entry.losses}L
               </div>

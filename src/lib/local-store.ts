@@ -24,6 +24,7 @@ export interface LocalUser {
   role: LocalRole;
   startingBalance: number;
   cashBalance: number;
+  bankruptcyCount: number;
   createdAt: string;
 }
 
@@ -162,6 +163,7 @@ function buildSeedState(): LocalState {
       role: user.role,
       startingBalance: 10000,
       cashBalance: leaderboardEntry?.cashBalance ?? 10000 - index * 500,
+      bankruptcyCount: 0,
       createdAt: "2026-03-30T00:00:00.000Z",
     };
   });
@@ -247,6 +249,10 @@ function normalizeLocalState(state: LocalState) {
     const nextId = mapLegacyId(user.id, legacyUserIdMap);
     if (nextId !== user.id) {
       user.id = nextId;
+      changed = true;
+    }
+    if (typeof user.bankruptcyCount !== "number") {
+      user.bankruptcyCount = 0;
       changed = true;
     }
   }
@@ -421,6 +427,7 @@ export async function signInLocalUser(email: string) {
         role: adminEmails.has(normalized) || !hasAdmin ? "admin" : "member",
         startingBalance: 10000,
         cashBalance: 10000,
+        bankruptcyCount: 0,
         createdAt: nowIso(),
       };
       state.users.push(user);

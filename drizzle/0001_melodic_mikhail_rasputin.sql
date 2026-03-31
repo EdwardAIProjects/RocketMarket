@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "bankruptcy_count" integer DEFAULT 0 NOT NULL;

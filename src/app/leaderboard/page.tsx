@@ -24,7 +24,14 @@ export default async function LeaderboardPage() {
                 </div>
                 <div>
                   <div className="eyebrow">Rank #{index + 1}</div>
-                  <div className="mt-1 text-xl font-semibold">{entry.user.name}</div>
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <span className="text-xl font-semibold">{entry.user.name}</span>
+                    {entry.user.bankruptcyCount > 0 ? (
+                      <span className="rounded-full border border-rose-500/40 bg-rose-500/14 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-rose-100">
+                        Bankrupt x{entry.user.bankruptcyCount}
+                      </span>
+                    ) : null}
+                  </div>
                   <div className="text-sm text-[color:var(--muted)]">{entry.user.email}</div>
                 </div>
               </div>

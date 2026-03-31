@@ -117,6 +117,7 @@ Behavior:
 - accepts any email address
 - first local account becomes admin automatically unless admin emails are configured
 - supports persistent local create/trade/resolve flows across reloads
+- supports persistent bankruptcy resets and leaderboard bankruptcy counts
 - can be reset with `npm run local:reset`
 
 This mode is intentional and should remain working. It is the preferred way to test the end-to-end UX without production dependencies.
@@ -132,6 +133,7 @@ Behavior:
 - requires Postgres
 - uses Auth.js + Google OAuth
 - persists trades, balances, positions, and resolution data
+- persists bankruptcy counts alongside user balances so leaderboard labels survive resets
 - admin users are bootstrapped from `ADMIN_EMAILS`
 
 ## Deployment model

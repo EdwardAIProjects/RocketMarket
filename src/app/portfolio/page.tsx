@@ -1,3 +1,4 @@
+import { BankruptcyPanel } from "@/components/bankruptcy-panel";
 import Link from "next/link";
 import { requireCurrentUser } from "@/lib/auth/session";
 import { getPortfolio } from "@/lib/data/service";
@@ -84,6 +85,8 @@ export default async function PortfolioPage() {
           </table>
         </div>
       </section>
+
+      <BankruptcyPanel bankruptcyCount={portfolio.user.bankruptcyCount} />
     </div>
   );
 }

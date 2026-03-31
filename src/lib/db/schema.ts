@@ -53,6 +53,7 @@ export const users = pgTable("users", {
   cashBalance: numeric("cash_balance", { precision: 12, scale: 2 })
     .default("10000")
     .notNull(),
+  bankruptcyCount: integer("bankruptcy_count").default(0).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 

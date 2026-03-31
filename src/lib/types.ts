@@ -11,6 +11,7 @@ export interface UserSummary {
   name: string;
   email: string;
   role: UserRole;
+  bankruptcyCount: number;
   imageUrl?: string;
 }
 
