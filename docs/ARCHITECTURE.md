@@ -106,7 +106,7 @@ Purpose:
 
 - full local flow testing
 - no Postgres
-- no Google OAuth
+- no Slack verification dependency
 - safe local sandboxing
 
 Behavior:
@@ -131,7 +131,8 @@ Purpose:
 Behavior:
 
 - requires Postgres
-- uses Auth.js + Google OAuth
+- uses Auth.js credentials sessions with Slack user lookup + DM verification codes for normal users
+- allows emails listed in `ADMIN_EMAILS` to bypass Slack and sign in with TOTP codes derived from `ADMIN_TOTP_SECRET`
 - persists trades, balances, positions, and resolution data
 - persists bankruptcy counts alongside user balances so leaderboard labels survive resets
 - admin users are bootstrapped from `ADMIN_EMAILS`

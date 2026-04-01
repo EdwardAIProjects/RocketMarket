@@ -70,7 +70,7 @@ export async function TopNav() {
               <Link
                 className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-slate-950 transition hover:opacity-90"
                 href={
-                  isLocalMode()
+                  isLocalMode() || !isDemoMode()
                     ? "/api/auth/signout?callbackUrl=/login"
                     : "/api/auth/signout"
                 }
@@ -79,12 +79,14 @@ export async function TopNav() {
               </Link>
             </div>
           ) : (
-            <Link
-              className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-slate-950 transition hover:opacity-90"
-              href={isLocalMode() ? "/login" : "/api/auth/signin"}
-            >
-              Sign in
-            </Link>
+            !isDemoMode() ? (
+              <Link
+                className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-slate-950 transition hover:opacity-90"
+                href="/login"
+              >
+                Sign in
+              </Link>
+            ) : null
           )}
         </div>
       </div>

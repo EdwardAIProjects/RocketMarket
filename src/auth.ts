@@ -1,20 +1,13 @@
 import type { NextAuthOptions } from "next-auth";
-import { eq } from "drizzle-orm";
 import CredentialsProvider from "next-auth/providers/credentials";
-import GoogleProvider from "next-auth/providers/google";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { getDb } from "@/lib/db";
-import { env, hasGoogleOAuthConfigured, isLocalMode } from "@/lib/env";
+import { env, isDemoMode, isLocalMode } from "@/lib/env";
 import { accounts, sessions, users, verificationTokens } from "@/lib/db/schema";
+import { verifyTeamLoginCode } from "@/lib/auth/slack";
 import { signInLocalUser } from "@/lib/local-store";
 
-const db = isLocalMode() ? null : getDb();
-const adminEmails = new Set(
-  env.adminEmailsCsv
-    .split(",")
-    .map((email) => email.trim().toLowerCase())
-    .filter(Boolean),
-);
+const db = isLocalMode() || isDemoMode() ? null : getDb();
 
 export const authOptions: NextAuthOptions = {
   secret: env.authSecret,
@@ -27,7 +20,7 @@ export const authOptions: NextAuthOptions = {
       })
     : undefined,
   session: {
-    strategy: isLocalMode() || !db ? "jwt" : "database",
+    strategy: "jwt",
   },
   providers: isLocalMode()
     ? [
@@ -56,32 +49,40 @@ export const authOptions: NextAuthOptions = {
           },
         }),
       ]
-    : hasGoogleOAuthConfigured()
+    : !isDemoMode()
       ? [
-          GoogleProvider({
-            clientId: env.googleClientId,
-            clientSecret: env.googleClientSecret,
+          CredentialsProvider({
+            id: "slack-email-code",
+            name: "Slack email code",
+            credentials: {
+              email: {
+                label: "Email",
+                type: "email",
+              },
+              code: {
+                label: "Verification code",
+                type: "text",
+              },
+            },
+            async authorize(credentials) {
+              const email = credentials?.email?.trim().toLowerCase();
+              const code = credentials?.code?.trim();
+
+              if (!email || !code) {
+                return null;
+              }
+
+              return verifyTeamLoginCode(email, code);
+            },
           }),
         ]
       : [],
-  pages: isLocalMode()
+  pages: isLocalMode() || !isDemoMode()
     ? {
         signIn: "/login",
       }
     : undefined,
   callbacks: {
-    async signIn({ user }) {
-      if (isLocalMode()) {
-        return true;
-      }
-
-      if (!env.allowedEmailDomain) {
-        return true;
-      }
-
-      const email = user.email ?? "";
-      return email.endsWith(`@${env.allowedEmailDomain}`);
-    },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
@@ -96,21 +97,6 @@ export const authOptions: NextAuthOptions = {
       }
 
       return session;
-    },
-  },
-  events: {
-    async signIn({ user }) {
-      if (isLocalMode()) {
-        return;
-      }
-
-      const email = user.email?.toLowerCase();
-
-      if (!db || !email || !adminEmails.has(email)) {
-        return;
-      }
-
-      await db.update(users).set({ role: "admin" }).where(eq(users.email, email));
     },
   },
 };

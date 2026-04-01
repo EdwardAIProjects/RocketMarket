@@ -3,6 +3,8 @@ import { LocalModeBanner } from "@/components/local-mode-banner";
 import { TopNav } from "@/components/top-nav";
 import "./globals.css";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "RocketMarket",
   description: "A play-money prediction market for a school rocketry team.",

@@ -24,7 +24,7 @@ If you change the product shape, data model, auth model, or deployment flow, upd
 - Next.js 16 App Router
 - TypeScript
 - Tailwind CSS
-- Auth.js with Google OAuth
+- Auth.js sessions with Slack-DM email verification
 - Drizzle ORM + PostgreSQL
 - Docker + docker-compose
 
@@ -42,15 +42,16 @@ If you change the product shape, data model, auth model, or deployment flow, upd
 ## Quick start
 
 1. Copy `.env.example` to `.env`
-2. Fill in Google OAuth credentials and `AUTH_SECRET`
+2. Fill in `AUTH_SECRET`, your Slack bot token, and `ADMIN_TOTP_SECRET`
 3. Set `ADMIN_EMAILS` to the comma-separated emails that should have admin rights
-4. Start the database and app:
+4. Install the Slack app in the UBCRocket workspace with `users:read.email`, `users:read`, `im:write`, and `chat:write`
+5. Start the database and app:
 
 ```bash
 docker compose up --build
 ```
 
-5. For local development without Docker:
+6. For local development without Docker:
 
 ```bash
 npm install
@@ -61,7 +62,7 @@ If `DATABASE_URL` is not set, the app boots into demo mode with fixture data so 
 
 ## Local development mode
 
-For quick local testing with no Postgres and no Google OAuth, set:
+For quick local testing with no Postgres and no Slack verification flow, set:
 
 ```bash
 LOCAL_DEV_MODE=true
@@ -76,7 +77,7 @@ In local mode:
 - create/trade/close/resolve flows persist to a local sandbox state file instead of Postgres
 - bankruptcy resets persist locally and still mark leaderboard names with a running bankruptcy count
 - the sandbox state lives at `LOCAL_STATE_PATH` or `/tmp/rocketmarket-local.json` by default
-- Google OAuth is not required
+- Slack workspace verification is not required
 
 Useful local test commands:
 
@@ -113,6 +114,7 @@ npm run local:reset
 - Postgres schema covering auth, markets, trades, positions, and ledger entries
 - API routes for listing markets, creating a market, quoting trades, closing, resolving, portfolio, and leaderboard
 - Real Postgres-backed service layer for trades, balances, positions, and resolution
+- Team-mode sign-in using email plus a Slack DM verification code, with admin-email bypass via `ADMIN_TOTP_SECRET`
 
 ## Documentation maintenance
 

@@ -1,11 +1,12 @@
 import { redirect } from "next/navigation";
 import { LocalLoginForm } from "@/components/local-login-form";
+import { TeamLoginForm } from "@/components/team-login-form";
 import { getCurrentSession } from "@/lib/auth/session";
-import { isLocalMode } from "@/lib/env";
+import { isDemoMode, isLocalMode } from "@/lib/env";
 
 export default async function LoginPage() {
-  if (!isLocalMode()) {
-    redirect("/api/auth/signin");
+  if (isDemoMode()) {
+    redirect("/");
   }
 
   const session = await getCurrentSession();
@@ -15,7 +16,7 @@ export default async function LoginPage() {
 
   return (
     <div className="mx-auto w-full max-w-xl py-8">
-      <LocalLoginForm />
+      {isLocalMode() ? <LocalLoginForm /> : <TeamLoginForm />}
     </div>
   );
 }

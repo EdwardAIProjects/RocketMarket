@@ -9,8 +9,8 @@
     "lint": "eslint .",
     "test": "vitest run --coverage",
     "test:watch": "vitest",
-    "db:generate": "drizzle-kit generate",
-    "db:push": "drizzle-kit push",
+    "db:generate": "drizzle-kit generate --config=drizzle.config.ts",
+    "db:push": "drizzle-kit push --config=drizzle.config.ts",
     "db:seed": "node scripts/seed.mjs",
     "local:reset": "node scripts/reset-local-state.mjs"
   },
