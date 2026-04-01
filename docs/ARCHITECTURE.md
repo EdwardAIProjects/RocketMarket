@@ -51,6 +51,7 @@ Primary UI entrypoints:
 - `src/app/portfolio/page.tsx`
 - `src/app/leaderboard/page.tsx`
 - `src/app/admin/markets/*`
+- `src/app/admin/users/page.tsx`
 
 ### Backend
 
@@ -65,6 +66,7 @@ The service layer is the main place where future work should land for:
 - portfolio calculations
 - trade execution
 - market close/resolve flows
+- admin market/user mutations
 - permission-sensitive business rules
 
 Avoid pushing business logic down into route files or UI components unless there is a strong reason.

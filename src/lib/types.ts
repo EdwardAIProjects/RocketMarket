@@ -75,6 +75,17 @@ export interface LeaderboardEntry {
   losses: number;
 }
 
+export interface AdminUserRecord {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  startingBalance: number;
+  cashBalance: number;
+  bankruptcyCount: number;
+  createdAt: string;
+}
+
 export interface TradeQuote {
   side: TradeSide;
   amount: number;

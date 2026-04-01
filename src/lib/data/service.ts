@@ -30,6 +30,7 @@ import {
 import { isDemoMode, isLocalMode } from "@/lib/env";
 import { createCpmmState, normalizeAmmState, quoteTrade } from "@/lib/markets/engine";
 import type {
+  AdminUserRecord,
   AmmState,
   CreateMarketInput,
   LeaderboardEntry,
@@ -74,6 +75,31 @@ const resolutionSchema = z.object({
   notes: optionalTrimmedString,
   evidenceUrl: z.string().url().optional().or(z.literal("")),
   percentYes: z.number().min(0).max(1).optional(),
+});
+
+const adminMarketUpdateSchema = z
+  .object({
+    question: trimmedString.min(1),
+    description: optionalTrimmedString,
+    category: trimmedString.min(1),
+    closeTime: trimmedString.datetime(),
+    resolveByTime: trimmedString.datetime(),
+    resolutionCriteria: trimmedString.min(1),
+    resolutionSource: trimmedString.min(1),
+    resolverUserId: z.string().uuid(),
+  })
+  .refine((input) => new Date(input.resolveByTime) >= new Date(input.closeTime), {
+    message: "Resolve-by time must be after close time.",
+    path: ["resolveByTime"],
+  });
+
+const adminUserUpdateSchema = z.object({
+  name: trimmedString.min(1),
+  email: trimmedString.email(),
+  role: z.enum(["member", "admin"]),
+  startingBalance: z.number().min(0),
+  cashBalance: z.number().min(0),
+  bankruptcyCount: z.number().int().min(0),
 });
 
 type MarketRow = typeof markets.$inferSelect;
@@ -233,6 +259,12 @@ function ensureAdminOrResolver(actor: UserRow, market: MarketRow) {
   }
 
   throw new Error("You do not have permission to resolve this market.");
+}
+
+function ensureAdmin(actor: UserRow) {
+  if (actor.role !== "admin") {
+    throw new Error("You do not have permission to perform this action.");
+  }
 }
 
 function positionCostBasis(position: PositionRow) {
@@ -453,6 +485,41 @@ export async function listAdminMarkets() {
   return mapMarketRows(rows);
 }
 
+export async function listAdminUsers(): Promise<AdminUserRecord[]> {
+  if (isLocalMode()) {
+    const state = await readLocalState();
+    return [...state.users]
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((user) => ({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        startingBalance: user.startingBalance,
+        cashBalance: user.cashBalance,
+        bankruptcyCount: user.bankruptcyCount,
+        createdAt: user.createdAt,
+      }));
+  }
+
+  if (isDemoMode()) {
+    return [];
+  }
+
+  const db = getRequiredDb();
+  const rows = await db.select().from(users).orderBy(asc(users.name), asc(users.email));
+  return rows.map((user) => ({
+    id: user.id,
+    name: user.name ?? user.email.split("@")[0] ?? "Unknown",
+    email: user.email,
+    role: user.role,
+    startingBalance: parseNumber(user.startingBalance),
+    cashBalance: parseNumber(user.cashBalance),
+    bankruptcyCount: user.bankruptcyCount,
+    createdAt: user.createdAt.toISOString(),
+  }));
+}
+
 export async function createMarket(input: CreateMarketInput & { resolverUserId?: string }, actorUserId: string) {
   if (isLocalMode()) {
     const parsed = createMarketSchema.parse(input);
@@ -561,6 +628,203 @@ export async function createMarket(input: CreateMarketInput & { resolverUserId?:
   });
 
   return (await mapMarketRows([inserted]))[0];
+}
+
+export async function updateAdminMarket(
+  marketId: string,
+  input: {
+    question: string;
+    description: string;
+    category: string;
+    closeTime: string;
+    resolveByTime: string;
+    resolutionCriteria: string;
+    resolutionSource: string;
+    resolverUserId: string;
+  },
+  actorUserId: string,
+) {
+  const parsed = adminMarketUpdateSchema.parse(input);
+
+  if (isLocalMode()) {
+    return withLocalState(async (state) => {
+      const actor = state.users.find((entry) => entry.id === actorUserId);
+      const market = state.markets.find((entry) => entry.id === marketId);
+      const resolver = state.users.find((entry) => entry.id === parsed.resolverUserId);
+
+      if (!actor || actor.role !== "admin") {
+        throw new Error("You do not have permission to perform this action.");
+      }
+
+      if (!market) {
+        throw new Error("Market not found.");
+      }
+
+      if (!resolver) {
+        throw new Error("Resolver not found.");
+      }
+
+      market.question = parsed.question;
+      market.description = parsed.description ?? "";
+      market.category = parsed.category;
+      market.closeTime = parsed.closeTime;
+      market.resolveByTime = parsed.resolveByTime;
+      market.resolutionCriteria = parsed.resolutionCriteria;
+      market.resolutionSource = parsed.resolutionSource;
+      market.resolverUserId = parsed.resolverUserId;
+      market.updatedAt = nowIso();
+
+      return mapLocalMarket(state, market);
+    });
+  }
+
+  if (isDemoMode()) {
+    throw new Error("Market editing is unavailable in demo mode.");
+  }
+
+  const db = getRequiredDb();
+  const actor = await getUserRowById(actorUserId);
+  const market = await getMarketRowById(marketId);
+  const resolver = await getUserRowById(parsed.resolverUserId);
+
+  if (!actor) {
+    throw new Error("User not found.");
+  }
+
+  ensureAdmin(actor);
+
+  if (!market) {
+    throw new Error("Market not found.");
+  }
+
+  if (!resolver) {
+    throw new Error("Resolver not found.");
+  }
+
+  const [updated] = await db
+    .update(markets)
+    .set({
+      question: parsed.question,
+      description: parsed.description ?? "",
+      category: parsed.category,
+      closeTime: new Date(parsed.closeTime),
+      resolveByTime: new Date(parsed.resolveByTime),
+      resolutionCriteria: parsed.resolutionCriteria,
+      resolutionSource: parsed.resolutionSource,
+      resolverUserId: parsed.resolverUserId,
+      updatedAt: new Date(),
+    })
+    .where(eq(markets.id, marketId))
+    .returning();
+
+  return (await mapMarketRows([updated]))[0];
+}
+
+export async function updateAdminUser(
+  userId: string,
+  input: {
+    name: string;
+    email: string;
+    role: "member" | "admin";
+    startingBalance: number;
+    cashBalance: number;
+    bankruptcyCount: number;
+  },
+  actorUserId: string,
+): Promise<AdminUserRecord> {
+  const parsed = adminUserUpdateSchema.parse(input);
+
+  if (isLocalMode()) {
+    return withLocalState(async (state) => {
+      const actor = state.users.find((entry) => entry.id === actorUserId);
+      const user = state.users.find((entry) => entry.id === userId);
+
+      if (!actor || actor.role !== "admin") {
+        throw new Error("You do not have permission to perform this action.");
+      }
+
+      if (!user) {
+        throw new Error("User not found.");
+      }
+
+      const duplicateEmail = state.users.find(
+        (entry) => entry.id !== userId && entry.email.toLowerCase() === parsed.email.toLowerCase(),
+      );
+
+      if (duplicateEmail) {
+        throw new Error("Email is already in use.");
+      }
+
+      user.name = parsed.name;
+      user.email = parsed.email.toLowerCase();
+      user.role = parsed.role;
+      user.startingBalance = parsed.startingBalance;
+      user.cashBalance = parsed.cashBalance;
+      user.bankruptcyCount = parsed.bankruptcyCount;
+
+      return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        startingBalance: user.startingBalance,
+        cashBalance: user.cashBalance,
+        bankruptcyCount: user.bankruptcyCount,
+        createdAt: user.createdAt,
+      };
+    });
+  }
+
+  if (isDemoMode()) {
+    throw new Error("User editing is unavailable in demo mode.");
+  }
+
+  const db = getRequiredDb();
+  const actor = await getUserRowById(actorUserId);
+  const target = await getUserRowById(userId);
+
+  if (!actor) {
+    throw new Error("User not found.");
+  }
+
+  ensureAdmin(actor);
+
+  if (!target) {
+    throw new Error("User not found.");
+  }
+
+  const duplicate = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.email, parsed.email.toLowerCase()));
+
+  if (duplicate.some((entry) => entry.id !== userId)) {
+    throw new Error("Email is already in use.");
+  }
+
+  const [updated] = await db
+    .update(users)
+    .set({
+      name: parsed.name,
+      email: parsed.email.toLowerCase(),
+      role: parsed.role,
+      startingBalance: parsed.startingBalance.toFixed(2),
+      cashBalance: parsed.cashBalance.toFixed(2),
+      bankruptcyCount: parsed.bankruptcyCount,
+    })
+    .where(eq(users.id, userId))
+    .returning();
+
+  return {
+    id: updated.id,
+    name: updated.name ?? updated.email.split("@")[0] ?? "Unknown",
+    email: updated.email,
+    role: updated.role,
+    startingBalance: parseNumber(updated.startingBalance),
+    cashBalance: parseNumber(updated.cashBalance),
+    bankruptcyCount: updated.bankruptcyCount,
+    createdAt: updated.createdAt.toISOString(),
+  };
 }
 
 export async function previewTrade(input: {
