@@ -20,13 +20,16 @@ export function TradePanel({
 }) {
   const router = useRouter();
   const [side, setSide] = useState<"buy_yes" | "buy_no">("buy_yes");
-  const [amount, setAmount] = useState(50);
+  const [amountInput, setAmountInput] = useState("50");
   const [message, setMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const parsedAmount = amountInput.trim() === "" ? Number.NaN : Number(amountInput);
+  const isAmountValid = Number.isFinite(parsedAmount) && parsedAmount >= 10;
+  const amount = isAmountValid ? parsedAmount : 10;
   const quote = quoteTrade({ side, amount, ammState });
-  const stake = Number.isFinite(amount) && amount > 0 ? amount : 10;
-  const potentialProfit = Math.max(0, quote.maxPayout - stake);
+  const stake = isAmountValid ? parsedAmount : 0;
+  const potentialProfit = isAmountValid ? Math.max(0, quote.maxPayout - stake) : 0;
   const sideLabel = side === "buy_yes" ? "YES" : "NO";
 
   return (
@@ -74,23 +77,26 @@ export function TradePanel({
           <div className="flex items-center rounded-2xl border border-[color:var(--line)] bg-[rgba(255,255,255,0.03)] px-4 py-3 focus-within:border-[color:var(--accent)]">
             <span className="mr-3 text-sm font-semibold text-[color:var(--muted)]">$</span>
             <input
-              value={amount}
+              value={amountInput}
               min={10}
               step={10}
-              onChange={(event) => setAmount(Number(event.target.value) || 10)}
+              onChange={(event) => setAmountInput(event.target.value)}
               type="number"
               className="w-full bg-transparent outline-none"
             />
           </div>
+          {!isAmountValid ? (
+            <p className="mt-2 text-xs text-rose-300">Enter a stake of at least $10.</p>
+          ) : null}
 
           <div className="mt-3 grid grid-cols-4 gap-2">
             {stakePresets.map((preset) => (
               <button
                 key={preset}
                 type="button"
-                onClick={() => setAmount(preset)}
+                onClick={() => setAmountInput(String(preset))}
                 className={`rounded-full px-3 py-2 text-xs font-semibold transition ${
-                  amount === preset
+                  isAmountValid && parsedAmount === preset
                     ? "bg-[color:var(--accent)] text-slate-950"
                     : "border border-[color:var(--line)] bg-white/4 text-[color:var(--muted)] hover:text-foreground"
                 }`}
@@ -128,9 +134,11 @@ export function TradePanel({
             <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--muted)]">
               Shares
             </div>
-            <div className="mono mt-2 text-xl font-semibold">{quote.shares.toFixed(2)}</div>
+            <div className="mono mt-2 text-xl font-semibold">
+              {isAmountValid ? quote.shares.toFixed(2) : "--"}
+            </div>
             <div className="mt-1 text-xs text-[color:var(--muted)]">
-              Avg fill {formatProbability(quote.avgPrice)}
+              {isAmountValid ? `Avg fill ${formatProbability(quote.avgPrice)}` : "Waiting for valid stake"}
             </div>
           </div>
           <div className="rounded-2xl border border-[color:var(--line)] bg-black/10 p-3">
@@ -138,7 +146,7 @@ export function TradePanel({
               Market after trade
             </div>
             <div className="mono mt-2 text-xl font-semibold">
-              {formatProbability(quote.probabilityAfter)}
+              {isAmountValid ? formatProbability(quote.probabilityAfter) : "--"}
             </div>
             <div className="mt-1 text-xs text-[color:var(--muted)]">
               New implied odds
@@ -148,7 +156,9 @@ export function TradePanel({
             <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--muted)]">
               Max payout
             </div>
-            <div className="mono mt-2 text-xl font-semibold">{formatMoney(quote.maxPayout)}</div>
+            <div className="mono mt-2 text-xl font-semibold">
+              {isAmountValid ? formatMoney(quote.maxPayout) : "--"}
+            </div>
             <div className="mt-1 text-xs text-[color:var(--muted)]">
               Total return if correct
             </div>
@@ -167,16 +177,20 @@ export function TradePanel({
 
       <button
         type="button"
-        disabled={isSubmitting}
+        disabled={isSubmitting || !isAmountValid}
         className="mt-5 w-full rounded-full bg-[color:var(--accent)] px-4 py-3 text-sm font-semibold text-slate-950 transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-65"
         onClick={async () => {
+          if (!isAmountValid) {
+            return;
+          }
+
           setIsSubmitting(true);
           setMessage(null);
 
           const response = await fetch(`/api/markets/${marketId}/trade`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ side, amount }),
+            body: JSON.stringify({ side, amount: parsedAmount }),
           });
 
           const payload = (await response.json()) as {
