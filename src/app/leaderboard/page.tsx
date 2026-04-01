@@ -62,10 +62,10 @@ export default async function LeaderboardPage() {
                 </div>
                 <div>
                   <div className="text-xs uppercase tracking-[0.18em] text-[color:var(--muted)]">
-                    W / L
+                    Wins / Losses
                   </div>
                   <div className="mt-1 text-lg font-semibold">
-                    {entry.wins} / {entry.losses}
+                    {entry.wins} Wins / {entry.losses} Losses
                   </div>
                 </div>
               </div>

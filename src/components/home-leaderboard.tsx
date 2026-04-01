@@ -41,7 +41,7 @@ export function HomeLeaderboard({
                 ) : null}
               </div>
               <div className="mt-1 text-xs text-[color:var(--muted)]">
-                {entry.wins}W / {entry.losses}L
+                {entry.wins} Wins / {entry.losses} Losses
               </div>
             </div>
             <div className="text-right">
