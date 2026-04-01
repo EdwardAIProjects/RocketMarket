@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Clock3, Users } from "lucide-react";
+import { MarketBetList } from "@/components/market-bet-list";
 import { formatCompactNumber, formatDateTime, formatProbability } from "@/lib/format";
 import type { Market } from "@/lib/types";
 
@@ -58,6 +59,10 @@ export function MarketCard({ market }: { market: Market }) {
       </div>
       <div className="mt-3 text-xs text-[color:var(--muted)]">
         {formatCompactNumber(market.volume)} vol
+      </div>
+
+      <div className="mt-5">
+        <MarketBetList bets={market.recentBets} title="Bet history" />
       </div>
     </Link>
   );

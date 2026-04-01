@@ -2,6 +2,7 @@ import type {
   AmmState,
   LeaderboardEntry,
   Market,
+  MarketBetSummary,
   PortfolioSnapshot,
   UserSummary,
 } from "@/lib/types";
@@ -51,6 +52,21 @@ function demoAmmState(probability: number): AmmState {
   return createCpmmState(probability);
 }
 
+function recentBet(
+  user: UserSummary,
+  side: MarketBetSummary["side"],
+  amount: number,
+  createdAt: string,
+): MarketBetSummary {
+  return {
+    userId: user.id,
+    userName: user.name,
+    side,
+    amount,
+    createdAt,
+  };
+}
+
 export const demoMarkets: Market[] = [
   {
     id: demoMarketIds.rail,
@@ -78,6 +94,11 @@ export const demoMarkets: Market[] = [
       { timestamp: "2026-03-27T18:00:00.000Z", probability: 0.51 },
       { timestamp: "2026-03-28T18:00:00.000Z", probability: 0.59 },
       { timestamp: "2026-03-29T18:00:00.000Z", probability: 0.62 },
+    ],
+    recentBets: [
+      recentBet(demoUsers[1], "buy_yes", 250, "2026-03-29T20:10:00.000Z"),
+      recentBet(demoUsers[2], "buy_no", 140, "2026-03-29T18:45:00.000Z"),
+      recentBet(demoUsers[0], "buy_yes", 320, "2026-03-29T17:05:00.000Z"),
     ],
   },
   {
@@ -107,6 +128,11 @@ export const demoMarkets: Market[] = [
       { timestamp: "2026-03-28T18:00:00.000Z", probability: 0.35 },
       { timestamp: "2026-03-29T18:00:00.000Z", probability: 0.37 },
     ],
+    recentBets: [
+      recentBet(demoUsers[1], "buy_no", 180, "2026-03-29T19:20:00.000Z"),
+      recentBet(demoUsers[0], "buy_yes", 90, "2026-03-29T16:40:00.000Z"),
+      recentBet(demoUsers[2], "buy_no", 210, "2026-03-28T23:15:00.000Z"),
+    ],
   },
   {
     id: demoMarketIds.hotfire,
@@ -134,6 +160,11 @@ export const demoMarkets: Market[] = [
       { timestamp: "2026-03-27T18:00:00.000Z", probability: 0.69 },
       { timestamp: "2026-03-28T18:00:00.000Z", probability: 0.71 },
       { timestamp: "2026-03-29T18:00:00.000Z", probability: 0.71 },
+    ],
+    recentBets: [
+      recentBet(demoUsers[2], "buy_yes", 400, "2026-03-29T21:00:00.000Z"),
+      recentBet(demoUsers[1], "buy_yes", 225, "2026-03-29T15:10:00.000Z"),
+      recentBet(demoUsers[0], "sell_no", 150, "2026-03-29T13:25:00.000Z"),
     ],
   },
 ];

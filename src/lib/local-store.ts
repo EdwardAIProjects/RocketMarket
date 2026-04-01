@@ -153,6 +153,30 @@ function emailName(email: string) {
     .join(" ");
 }
 
+function buildSeedTrades() {
+  return demoMarkets.flatMap((market) =>
+    market.recentBets.map((bet) => {
+      const avgPrice =
+        bet.side === "buy_yes" || bet.side === "sell_yes"
+          ? market.currentProbability
+          : 1 - market.currentProbability;
+
+      return {
+        id: randomUUID(),
+        marketId: market.id,
+        userId: bet.userId,
+        side: bet.side,
+        stakeAmount: bet.amount,
+        avgPrice,
+        sharesReceived: bet.amount / Math.max(avgPrice, 0.01),
+        probabilityBefore: market.currentProbability,
+        probabilityAfter: market.currentProbability,
+        createdAt: bet.createdAt,
+      };
+    }),
+  );
+}
+
 function buildSeedState(): LocalState {
   const baseUsers: LocalUser[] = demoUsers.map((user, index) => {
     const leaderboardEntry = demoLeaderboard.find((entry) => entry.user.id === user.id);
@@ -195,6 +219,7 @@ function buildSeedState(): LocalState {
   ];
 
   return {
+    trades: buildSeedTrades(),
     users: baseUsers,
     markets: demoMarkets.map((market) => ({
       id: market.id,
@@ -217,7 +242,6 @@ function buildSeedState(): LocalState {
       updatedAt: marketCreatedAt,
     })),
     positions,
-    trades: [],
     ledgerEntries: baseUsers.map((user) => ({
       id: randomUUID(),
       userId: user.id,
@@ -306,6 +330,11 @@ function normalizeLocalState(state: LocalState) {
       trade.marketId = nextMarketId;
       changed = true;
     }
+  }
+
+  if (state.trades.length === 0) {
+    state.trades = buildSeedTrades();
+    changed = true;
   }
 
   for (const entry of state.ledgerEntries) {

@@ -20,6 +20,14 @@ export interface ChartPoint {
   probability: number;
 }
 
+export interface MarketBetSummary {
+  userId: string;
+  userName: string;
+  side: TradeSide;
+  amount: number;
+  createdAt: string;
+}
+
 export interface AmmState {
   poolYes: number;
   poolNo: number;
@@ -45,6 +53,7 @@ export interface Market {
   volume: number;
   tradersCount: number;
   chart: ChartPoint[];
+  recentBets: MarketBetSummary[];
 }
 
 export interface Position {

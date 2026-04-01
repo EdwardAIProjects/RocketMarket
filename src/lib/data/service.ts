@@ -35,6 +35,7 @@ import type {
   CreateMarketInput,
   LeaderboardEntry,
   Market,
+  MarketBetSummary,
   PortfolioSnapshot,
   ResolutionPayload,
   TradeQuote,
@@ -164,11 +165,35 @@ async function getUsersByIds(ids: string[]) {
   return new Map(rows.map((user) => [user.id, user]));
 }
 
-async function mapMarketRows(marketRows: MarketRow[]): Promise<Market[]> {
-  const userMap = await getUsersByIds(
-    marketRows.flatMap((market) => [market.createdByUserId, market.resolverUserId]),
-  );
+function buildRecentBets(
+  rawTrades: Array<{
+    marketId: string;
+    userId: string;
+    side: TradeSide;
+    stakeAmount: string | number;
+    createdAt: Date | string;
+  }>,
+  userNames: Map<string, string>,
+) {
+  const recentBetsMap = new Map<string, MarketBetSummary[]>();
 
+  for (const trade of rawTrades) {
+    const existing = recentBetsMap.get(trade.marketId) ?? [];
+    existing.push({
+      userId: trade.userId,
+      userName: userNames.get(trade.userId) ?? "Unknown",
+      side: trade.side,
+      amount: parseNumber(trade.stakeAmount),
+      createdAt:
+        typeof trade.createdAt === "string" ? trade.createdAt : trade.createdAt.toISOString(),
+    });
+    recentBetsMap.set(trade.marketId, existing);
+  }
+
+  return recentBetsMap;
+}
+
+async function mapMarketRows(marketRows: MarketRow[]): Promise<Market[]> {
   const db = getRequiredDb();
   const ids = marketRows.map((market) => market.id);
   const chartRows =
@@ -179,6 +204,33 @@ async function mapMarketRows(marketRows: MarketRow[]): Promise<Market[]> {
           .from(marketChartPoints)
           .where(inArray(marketChartPoints.marketId, ids))
           .orderBy(asc(marketChartPoints.at));
+  const tradeRows =
+    ids.length === 0
+      ? []
+      : await db
+          .select({
+            marketId: trades.marketId,
+            userId: trades.userId,
+            side: trades.side,
+            stakeAmount: trades.stakeAmount,
+            createdAt: trades.createdAt,
+          })
+          .from(trades)
+          .where(inArray(trades.marketId, ids))
+          .orderBy(desc(trades.createdAt));
+  const userMap = await getUsersByIds([
+    ...marketRows.flatMap((market) => [market.createdByUserId, market.resolverUserId]),
+    ...tradeRows.map((trade) => trade.userId),
+  ]);
+  const recentBetsMap = buildRecentBets(
+    tradeRows,
+    new Map(
+      [...userMap.values()].map((user) => [
+        user.id,
+        user.name ?? user.email.split("@")[0] ?? "Unknown",
+      ]),
+    ),
+  );
 
   const chartMap = new Map<string, Array<{ timestamp: string; probability: number }>>();
 
@@ -225,6 +277,7 @@ async function mapMarketRows(marketRows: MarketRow[]): Promise<Market[]> {
             probability: parseNumber(market.currentProbability),
           },
         ],
+      recentBets: recentBetsMap.get(market.id) ?? [],
     };
   });
 }
@@ -319,6 +372,21 @@ function mapLocalMarket(state: LocalState, market: LocalMarket): Market {
     throw new Error("Local market references a missing user.");
   }
 
+  const recentBets = state.trades
+    .filter((trade) => trade.marketId === market.id)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .map((trade) => {
+      const user = state.users.find((entry) => entry.id === trade.userId);
+
+      return {
+        userId: trade.userId,
+        userName: user?.name ?? "Unknown",
+        side: trade.side,
+        amount: trade.stakeAmount,
+        createdAt: trade.createdAt,
+      };
+    });
+
   return {
     id: market.id,
     slug: market.slug,
@@ -345,6 +413,7 @@ function mapLocalMarket(state: LocalState, market: LocalMarket): Market {
           timestamp: point.at,
           probability: point.probability,
         })) ?? [],
+    recentBets,
   };
 }
 

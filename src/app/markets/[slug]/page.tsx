@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { MarketBetList } from "@/components/market-bet-list";
 import { MarketChart } from "@/components/market-chart";
 import { StatPill } from "@/components/stat-pill";
 import { TradePanel } from "@/components/trade-panel";
@@ -44,6 +45,7 @@ export default async function MarketDetailPage({
       <section className="grid gap-6 xl:grid-cols-[1.4fr_0.8fr]">
         <div className="space-y-6">
           <MarketChart points={market.chart} />
+          <MarketBetList bets={market.recentBets} title="Bet history" />
           <div className="panel rounded-[22px] p-5">
             <div className="eyebrow">Rules</div>
             <div className="mt-4 grid gap-5 md:grid-cols-2">
