@@ -1,0 +1,78 @@
+import { mkdtemp, rm } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+async function loadLocalModules(statePath: string) {
+  process.env.LOCAL_DEV_MODE = "true";
+  process.env.LOCAL_STATE_PATH = statePath;
+  delete process.env.DATABASE_URL;
+
+  vi.resetModules();
+
+  const service = await import("@/lib/data/service");
+  const localStore = await import("@/lib/local-store");
+
+  return {
+    ...service,
+    ...localStore,
+  };
+}
+
+describe("market lifecycle", () => {
+  let tempDir: string | undefined;
+
+  afterEach(async () => {
+    vi.resetModules();
+    delete process.env.LOCAL_DEV_MODE;
+    delete process.env.LOCAL_STATE_PATH;
+    delete process.env.DATABASE_URL;
+
+    if (tempDir) {
+      await rm(tempDir, { recursive: true, force: true });
+      tempDir = undefined;
+    }
+  });
+
+  it("automatically closes local markets once the close time has passed", async () => {
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "rocketmarket-market-lifecycle-"));
+    const statePath = path.join(tempDir, "state.json");
+    const { getMarketById, readLocalState, writeLocalState } = await loadLocalModules(statePath);
+
+    const seededState = await readLocalState();
+    const market = seededState.markets.find((entry) => entry.status === "open");
+
+    if (!market) {
+      throw new Error("Expected a seeded open market.");
+    }
+
+    market.closeTime = new Date(Date.now() - 60_000).toISOString();
+    await writeLocalState(seededState);
+
+    const updatedMarket = await getMarketById(market.id);
+    const normalizedState = await readLocalState();
+
+    expect(updatedMarket?.status).toBe("closed");
+    expect(normalizedState.markets.find((entry) => entry.id === market.id)?.status).toBe("closed");
+  });
+
+  it("lets admins manually close and reopen unresolved markets in local mode", async () => {
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "rocketmarket-market-lifecycle-"));
+    const statePath = path.join(tempDir, "state.json");
+    const { readLocalState, setAdminMarketStatus } = await loadLocalModules(statePath);
+
+    const seededState = await readLocalState();
+    const admin = seededState.users.find((entry) => entry.role === "admin");
+    const market = seededState.markets.find((entry) => entry.status === "open");
+
+    if (!admin || !market) {
+      throw new Error("Expected seeded admin and open market.");
+    }
+
+    const closed = await setAdminMarketStatus(market.id, { status: "closed" }, admin.id);
+    const reopened = await setAdminMarketStatus(market.id, { status: "open" }, admin.id);
+
+    expect(closed.status).toBe("closed");
+    expect(reopened.status).toBe("open");
+  });
+});

@@ -30,6 +30,8 @@ This is not intended to be a real-money exchange, a decentralized protocol, or a
 
 - Market creation requires explicit criteria and a source
 - Markets move through `open -> closed -> resolved` or `canceled`
+- `closeTime` automatically moves overdue `open` markets to `closed`
+- Admins can manually reopen or close unresolved markets when operationally necessary
 - Resolution writes audit logs and settlement ledger entries
 - A canceled market refunds cost basis rather than inventing a winner
 

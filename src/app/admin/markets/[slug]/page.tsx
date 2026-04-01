@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { AdminMarketEditor } from "@/components/admin-market-editor";
+import { MarketStatusBadge } from "@/components/market-status-badge";
 import { ResolutionPanel } from "@/components/resolution-panel";
 import { requireAdmin } from "@/lib/auth/session";
 import { getMarketBySlug, listAdminUsers } from "@/lib/data/service";
@@ -26,6 +27,9 @@ export default async function AdminMarketDetailPage({
         <AdminMarketEditor market={market} users={users} />
         <section className="panel rounded-[28px] p-5">
           <div className="eyebrow">Admin detail</div>
+          <div className="mt-3">
+            <MarketStatusBadge status={market.status} />
+          </div>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight">{market.question}</h1>
           <div className="mt-5 space-y-4 text-sm">
             <div>
@@ -59,7 +63,7 @@ export default async function AdminMarketDetailPage({
       </div>
 
       <div className="space-y-6">
-        <ResolutionPanel marketId={market.id} />
+        <ResolutionPanel marketId={market.id} marketStatus={market.status} />
       </div>
     </div>
   );

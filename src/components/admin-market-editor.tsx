@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { MarketStatusBadge } from "@/components/market-status-badge";
 import type { AdminUserRecord, Market } from "@/lib/types";
 
 export function AdminMarketEditor({
@@ -25,11 +26,87 @@ export function AdminMarketEditor({
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const statusLocked = market.status === "resolved" || market.status === "canceled";
 
   return (
     <section className="panel rounded-[28px] p-5">
       <div className="eyebrow">Edit market</div>
-      <h2 className="mt-2 text-lg font-semibold">Update market metadata</h2>
+      <div className="mt-2 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <h2 className="text-lg font-semibold">Update market metadata</h2>
+        <MarketStatusBadge status={market.status} />
+      </div>
+
+      <div className="mt-5 rounded-[22px] border border-[color:var(--line)] bg-white/4 p-4">
+        <div className="text-xs uppercase tracking-[0.18em] text-[color:var(--muted)]">
+          Manual market status
+        </div>
+        <div className="mt-3 flex flex-wrap gap-3">
+          <button
+            type="button"
+            disabled={isUpdatingStatus || statusLocked || market.status === "open"}
+            className="rounded-full border border-emerald-400/25 bg-emerald-400/12 px-4 py-2 text-sm font-semibold text-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+            onClick={async () => {
+              setIsUpdatingStatus(true);
+              setError(null);
+              setMessage(null);
+
+              const response = await fetch(`/api/admin/markets/${market.id}/status`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ status: "open" }),
+              });
+
+              const payload = (await response.json()) as { error?: string };
+              if (!response.ok) {
+                setError(payload.error ?? "Market open failed.");
+                setIsUpdatingStatus(false);
+                return;
+              }
+
+              setMessage("Market opened.");
+              setIsUpdatingStatus(false);
+              router.refresh();
+            }}
+          >
+            Open market
+          </button>
+          <button
+            type="button"
+            disabled={isUpdatingStatus || statusLocked || market.status === "closed"}
+            className="rounded-full border border-amber-400/25 bg-amber-400/12 px-4 py-2 text-sm font-semibold text-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
+            onClick={async () => {
+              setIsUpdatingStatus(true);
+              setError(null);
+              setMessage(null);
+
+              const response = await fetch(`/api/admin/markets/${market.id}/status`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ status: "closed" }),
+              });
+
+              const payload = (await response.json()) as { error?: string };
+              if (!response.ok) {
+                setError(payload.error ?? "Market close failed.");
+                setIsUpdatingStatus(false);
+                return;
+              }
+
+              setMessage("Market closed.");
+              setIsUpdatingStatus(false);
+              router.refresh();
+            }}
+          >
+            Close market
+          </button>
+        </div>
+        <p className="mt-3 text-sm text-[color:var(--muted)]">
+          {statusLocked
+            ? "Resolved and canceled markets are locked from manual reopen/close changes."
+            : "Admins can manually open or close unresolved markets here."}
+        </p>
+      </div>
 
       <form
         className="mt-5 space-y-4"

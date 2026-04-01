@@ -108,13 +108,19 @@ npm run local:reset
 - Landing page with featured markets
 - Market detail page with chart and trade preview
 - Portfolio and leaderboard views
-- Admin market queue, metadata editing, user editing, and resolution UI
+- Admin market queue, metadata editing, manual open/close controls, and resolution UI
 - Portfolio bankruptcy reset flow with persistent bankruptcy counts on the leaderboard
 - Typed market engine with unit tests
 - Postgres schema covering auth, markets, trades, positions, and ledger entries
 - API routes for listing markets, creating a market, quoting trades, closing, resolving, portfolio, and leaderboard
 - Real Postgres-backed service layer for trades, balances, positions, and resolution
 - Team-mode sign-in using email plus a Slack DM verification code, with admin-email bypass via `ADMIN_TOTP_SECRET`
+
+## Market timing behavior
+
+- `closeTime` now automatically closes an `open` market once the deadline passes
+- admins can still manually reopen or close unresolved markets from the admin market screen
+- `resolveByTime` is used as an admin-facing deadline and sorting signal for markets that are already closed
 
 ## Documentation maintenance
 

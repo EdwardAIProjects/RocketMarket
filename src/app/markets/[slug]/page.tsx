@@ -70,6 +70,7 @@ export default async function MarketDetailPage({
             marketId={market.id}
             probability={market.currentProbability}
             ammState={market.ammState}
+            marketStatus={market.status}
           />
           <div className="panel rounded-[22px] p-5">
             <div className="eyebrow">Market Stats</div>

@@ -144,6 +144,11 @@ function nowIso() {
   return new Date().toISOString();
 }
 
+function isPastTime(value: string) {
+  const timestamp = new Date(value).getTime();
+  return Number.isFinite(timestamp) && timestamp <= Date.now();
+}
+
 function emailName(email: string) {
   const base = email.split("@")[0] ?? "User";
   return base
@@ -300,6 +305,11 @@ function normalizeLocalState(state: LocalState) {
     }
     if (!market.ammState) {
       market.ammState = createCpmmState(market.currentProbability);
+      changed = true;
+    }
+    if (market.status === "open" && isPastTime(market.closeTime)) {
+      market.status = "closed";
+      market.updatedAt = nowIso();
       changed = true;
     }
   }

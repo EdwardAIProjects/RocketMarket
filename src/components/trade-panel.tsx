@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRightLeft } from "lucide-react";
 import { formatMoney, formatProbability } from "@/lib/format";
 import { quoteTrade } from "@/lib/markets/engine";
-import type { AmmState } from "@/lib/types";
+import type { AmmState, MarketStatus } from "@/lib/types";
 
 const stakePresets = [25, 50, 100, 250];
 
@@ -13,10 +13,12 @@ export function TradePanel({
   marketId,
   probability,
   ammState,
+  marketStatus,
 }: {
   marketId: string;
   probability: number;
   ammState: AmmState;
+  marketStatus: MarketStatus;
 }) {
   const router = useRouter();
   const [side, setSide] = useState<"buy_yes" | "buy_no">("buy_yes");
@@ -31,6 +33,15 @@ export function TradePanel({
   const stake = isAmountValid ? parsedAmount : 0;
   const potentialProfit = isAmountValid ? Math.max(0, quote.maxPayout - stake) : 0;
   const sideLabel = side === "buy_yes" ? "YES" : "NO";
+  const tradingDisabled = marketStatus !== "open";
+  const actionLabel =
+    marketStatus === "closed"
+      ? "Market closed"
+      : marketStatus === "resolved"
+        ? "Market resolved"
+        : marketStatus === "canceled"
+          ? "Market canceled"
+          : `Buy ${sideLabel}`;
 
   return (
     <div className="panel rounded-[28px] p-5">
@@ -47,9 +58,12 @@ export function TradePanel({
       <div className="mt-5 grid grid-cols-2 gap-3">
         <button
           type="button"
+          disabled={tradingDisabled}
           onClick={() => setSide("buy_yes")}
           className={`rounded-2xl px-4 py-4 text-left transition ${
-            side === "buy_yes"
+            tradingDisabled
+              ? "cursor-not-allowed border border-white/10 bg-white/5 text-[color:var(--muted)]"
+              : side === "buy_yes"
               ? "border border-emerald-400/40 bg-emerald-500/18 text-white"
               : "border border-emerald-500/18 bg-emerald-500/8 text-emerald-200"
           }`}
@@ -59,9 +73,12 @@ export function TradePanel({
         </button>
         <button
           type="button"
+          disabled={tradingDisabled}
           onClick={() => setSide("buy_no")}
           className={`rounded-2xl px-4 py-4 text-left transition ${
-            side === "buy_no"
+            tradingDisabled
+              ? "cursor-not-allowed border border-white/10 bg-white/5 text-[color:var(--muted)]"
+              : side === "buy_no"
               ? "border border-rose-400/40 bg-rose-500/18 text-white"
               : "border border-rose-500/18 bg-rose-500/8 text-rose-200"
           }`}
@@ -82,6 +99,7 @@ export function TradePanel({
               step={10}
               onChange={(event) => setAmountInput(event.target.value)}
               type="number"
+              disabled={tradingDisabled}
               className="w-full bg-transparent outline-none"
             />
           </div>
@@ -94,9 +112,12 @@ export function TradePanel({
               <button
                 key={preset}
                 type="button"
+                disabled={tradingDisabled}
                 onClick={() => setAmountInput(String(preset))}
                 className={`rounded-full px-3 py-2 text-xs font-semibold transition ${
-                  isAmountValid && parsedAmount === preset
+                  tradingDisabled
+                    ? "cursor-not-allowed border border-white/10 bg-white/5 text-[color:var(--muted)]"
+                    : isAmountValid && parsedAmount === preset
                     ? "bg-[color:var(--accent)] text-slate-950"
                     : "border border-[color:var(--line)] bg-white/4 text-[color:var(--muted)] hover:text-foreground"
                 }`}
@@ -177,10 +198,14 @@ export function TradePanel({
 
       <button
         type="button"
-        disabled={isSubmitting || !isAmountValid}
-        className="mt-5 w-full rounded-full bg-[color:var(--accent)] px-4 py-3 text-sm font-semibold text-slate-950 transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-65"
+        disabled={isSubmitting || !isAmountValid || tradingDisabled}
+        className={`mt-5 w-full rounded-full px-4 py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-65 ${
+          tradingDisabled
+            ? "bg-white/10 text-[color:var(--muted)]"
+            : "bg-[color:var(--accent)] text-slate-950 hover:opacity-90"
+        }`}
         onClick={async () => {
-          if (!isAmountValid) {
+          if (!isAmountValid || tradingDisabled) {
             return;
           }
 
@@ -213,10 +238,12 @@ export function TradePanel({
           router.refresh();
         }}
       >
-        {isSubmitting ? "Submitting..." : `Buy ${sideLabel}`}
+        {isSubmitting ? "Submitting..." : actionLabel}
       </button>
       <p className="mt-3 text-xs leading-5 text-[color:var(--muted)]">
-        Trades update your fake-money balance immediately and move the market.
+        {tradingDisabled
+          ? "Trading is disabled because this market is no longer open."
+          : "Trades update your fake-money balance immediately and move the market."}
       </p>
       {message ? <p className="mt-3 text-sm font-medium text-[color:var(--accent-strong)]">{message}</p> : null}
     </div>

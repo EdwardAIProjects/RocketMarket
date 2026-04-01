@@ -2,17 +2,24 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { ResolutionOutcome } from "@/lib/types";
+import type { MarketStatus, ResolutionOutcome } from "@/lib/types";
 
 const outcomes: ResolutionOutcome[] = ["yes", "no", "partial", "canceled"];
 
-export function ResolutionPanel({ marketId }: { marketId: string }) {
+export function ResolutionPanel({
+  marketId,
+  marketStatus,
+}: {
+  marketId: string;
+  marketStatus: MarketStatus;
+}) {
   const router = useRouter();
   const [outcome, setOutcome] = useState<ResolutionOutcome>("yes");
   const [notes, setNotes] = useState("");
   const [evidenceUrl, setEvidenceUrl] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const resolutionLocked = marketStatus === "resolved" || marketStatus === "canceled";
 
   return (
     <div className="panel rounded-[28px] p-5">
@@ -59,28 +66,7 @@ export function ResolutionPanel({ marketId }: { marketId: string }) {
       <div className="mt-5 flex gap-3">
         <button
           type="button"
-          className="rounded-full border border-[color:var(--line)] bg-white/2 px-4 py-3 text-sm font-semibold"
-          onClick={async () => {
-            setIsSubmitting(true);
-            setMessage(null);
-
-            const response = await fetch(`/api/markets/${marketId}/close`, {
-              method: "POST",
-            });
-
-            const payload = (await response.json()) as { error?: string };
-            setMessage(response.ok ? "Market closed." : payload.error ?? "Close failed.");
-            setIsSubmitting(false);
-            if (response.ok) {
-              router.refresh();
-            }
-          }}
-        >
-          Close market
-        </button>
-        <button
-          type="button"
-          disabled={isSubmitting}
+          disabled={isSubmitting || resolutionLocked}
           className="rounded-full bg-[color:var(--accent)] px-4 py-3 text-sm font-semibold text-slate-950 disabled:cursor-not-allowed disabled:opacity-65"
           onClick={async () => {
             setIsSubmitting(true);
@@ -105,6 +91,11 @@ export function ResolutionPanel({ marketId }: { marketId: string }) {
           {isSubmitting ? "Working..." : "Resolve"}
         </button>
       </div>
+      {resolutionLocked ? (
+        <p className="mt-4 text-sm text-[color:var(--muted)]">
+          This market is already finalized and cannot be resolved again.
+        </p>
+      ) : null}
       {message ? <p className="mt-4 text-sm font-medium">{message}</p> : null}
     </div>
   );

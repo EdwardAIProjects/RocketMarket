@@ -103,6 +103,10 @@ const adminUserUpdateSchema = z.object({
   bankruptcyCount: z.number().int().min(0),
 });
 
+const marketStatusMutationSchema = z.object({
+  status: z.enum(["open", "closed"]),
+});
+
 type MarketRow = typeof markets.$inferSelect;
 type UserRow = typeof users.$inferSelect;
 type PositionRow = typeof positions.$inferSelect;
@@ -127,6 +131,11 @@ function parseNumber(value: string | number | null | undefined) {
 
 function nowIso() {
   return new Date().toISOString();
+}
+
+function isPastTime(value: string | Date) {
+  const timestamp = value instanceof Date ? value.getTime() : new Date(value).getTime();
+  return Number.isFinite(timestamp) && timestamp <= Date.now();
 }
 
 function slugify(question: string) {
@@ -320,6 +329,56 @@ function ensureAdmin(actor: UserRow) {
   }
 }
 
+function ensureUnresolvedMarketStatus(status: Market["status"]) {
+  if (status === "resolved" || status === "canceled") {
+    throw new Error("Resolved or canceled markets cannot be reopened or closed.");
+  }
+}
+
+function adminMarketSortValue(market: {
+  status: Market["status"];
+  closeTime: string;
+  resolveByTime: string;
+}) {
+  return market.status === "open" ? market.closeTime : market.resolveByTime;
+}
+
+function sortAdminMarkets<T extends Market>(markets: T[]) {
+  const statusOrder: Record<Market["status"], number> = {
+    open: 0,
+    closed: 1,
+    resolved: 2,
+    canceled: 3,
+  };
+
+  return [...markets].sort((a, b) => {
+    const statusDiff = statusOrder[a.status] - statusOrder[b.status];
+    if (statusDiff !== 0) {
+      return statusDiff;
+    }
+
+    const timeDiff =
+      new Date(adminMarketSortValue(a)).getTime() - new Date(adminMarketSortValue(b)).getTime();
+
+    if (timeDiff !== 0) {
+      return timeDiff;
+    }
+
+    return a.question.localeCompare(b.question);
+  });
+}
+
+async function autoCloseExpiredDbMarkets() {
+  const db = getRequiredDb();
+  await db
+    .update(markets)
+    .set({
+      status: "closed",
+      updatedAt: new Date(),
+    })
+    .where(and(eq(markets.status, "open"), sql`${markets.closeTime} <= now()`));
+}
+
 function positionCostBasis(position: PositionRow) {
   return (
     parseNumber(position.yesShares) * parseNumber(position.avgYesPrice) +
@@ -481,6 +540,7 @@ export async function listMarkets() {
     return demoMarkets;
   }
 
+  await autoCloseExpiredDbMarkets();
   const db = getRequiredDb();
   const rows = await db.select().from(markets).orderBy(desc(markets.createdAt));
   return mapMarketRows(rows);
@@ -502,6 +562,7 @@ export async function getMarketBySlug(slug: string) {
     return demoMarkets.find((market) => market.slug === slug);
   }
 
+  await autoCloseExpiredDbMarkets();
   const row = await getMarketRowBySlug(slug);
   if (!row) {
     return undefined;
@@ -521,6 +582,7 @@ export async function getMarketById(id: string) {
     return demoMarkets.find((market) => market.id === id);
   }
 
+  await autoCloseExpiredDbMarkets();
   const row = await getMarketRowById(id);
   if (!row) {
     return undefined;
@@ -532,26 +594,18 @@ export async function getMarketById(id: string) {
 export async function listAdminMarkets() {
   if (isLocalMode()) {
     const state = await readLocalState();
-    return state.markets
-      .filter((market) => market.status === "closed" || market.status === "open")
-      .sort((a, b) => a.resolveByTime.localeCompare(b.resolveByTime))
-      .map((market) => mapLocalMarket(state, market));
+    return sortAdminMarkets(state.markets.map((market) => mapLocalMarket(state, market)));
   }
 
   if (isDemoMode()) {
-    return demoMarkets.filter(
-      (market) => market.status === "closed" || market.status === "open",
-    );
+    return sortAdminMarkets(demoMarkets);
   }
 
+  await autoCloseExpiredDbMarkets();
   const db = getRequiredDb();
-  const rows = await db
-    .select()
-    .from(markets)
-    .where(inArray(markets.status, ["open", "closed"]))
-    .orderBy(asc(markets.resolveByTime), desc(markets.createdAt));
+  const rows = await db.select().from(markets);
 
-  return mapMarketRows(rows);
+  return sortAdminMarkets(await mapMarketRows(rows));
 }
 
 export async function listAdminUsers(): Promise<AdminUserRecord[]> {
@@ -936,6 +990,11 @@ export async function executeTrade(input: {
         throw new Error("User not found.");
       }
 
+      if (market.status === "open" && isPastTime(market.closeTime)) {
+        market.status = "closed";
+        market.updatedAt = nowIso();
+      }
+
       if (market.status !== "open") {
         throw new Error("This market is not open for trading.");
       }
@@ -1073,6 +1132,17 @@ export async function executeTrade(input: {
 
     if (!actor) {
       throw new Error("User not found.");
+    }
+
+    if (market.status === "open" && isPastTime(market.closeTime)) {
+      await tx
+        .update(markets)
+        .set({
+          status: "closed",
+          updatedAt: new Date(),
+        })
+        .where(eq(markets.id, parsed.marketId));
+      throw new Error("This market is not open for trading.");
     }
 
     ensureOpenMarket(market);
@@ -1268,6 +1338,12 @@ export async function closeMarket(id: string, actorUserId: string) {
         throw new Error("You do not have permission to resolve this market.");
       }
 
+      ensureUnresolvedMarketStatus(market.status);
+
+      if (market.status === "closed") {
+        return mapLocalMarket(state, market);
+      }
+
       market.status = "closed";
       market.updatedAt = nowIso();
       state.resolutionAuditLogs.push({
@@ -1309,6 +1385,11 @@ export async function closeMarket(id: string, actorUserId: string) {
   }
 
   ensureAdminOrResolver(actor, market);
+  ensureUnresolvedMarketStatus(market.status);
+
+  if (market.status === "closed") {
+    return (await mapMarketRows([market]))[0];
+  }
 
   const [updated] = await db
     .update(markets)
@@ -1325,6 +1406,80 @@ export async function closeMarket(id: string, actorUserId: string) {
     action: "close",
     payloadJson: {},
   });
+
+  return (await mapMarketRows([updated]))[0];
+}
+
+export async function setAdminMarketStatus(
+  marketId: string,
+  input: { status: "open" | "closed" },
+  actorUserId: string,
+) {
+  const parsed = marketStatusMutationSchema.parse(input);
+
+  if (isLocalMode()) {
+    return withLocalState(async (state) => {
+      const actor = state.users.find((entry) => entry.id === actorUserId);
+      const market = state.markets.find((entry) => entry.id === marketId);
+
+      if (!actor) {
+        throw new Error("User not found.");
+      }
+
+      if (!market) {
+        throw new Error("Market not found.");
+      }
+
+      if (actor.role !== "admin") {
+        throw new Error("You do not have permission to perform this action.");
+      }
+      ensureUnresolvedMarketStatus(market.status);
+
+      market.status = parsed.status;
+      market.updatedAt = nowIso();
+
+      return mapLocalMarket(state, market);
+    });
+  }
+
+  if (isDemoMode()) {
+    const market = demoMarkets.find((entry) => entry.id === marketId);
+    if (!market) {
+      throw new Error("Market not found.");
+    }
+
+    ensureUnresolvedMarketStatus(market.status);
+
+    return {
+      ...market,
+      status: parsed.status,
+    };
+  }
+
+  const db = getRequiredDb();
+  const actor = await getUserRowById(actorUserId);
+  const market = await getMarketRowById(marketId);
+
+  if (!actor) {
+    throw new Error("User not found.");
+  }
+
+  ensureAdmin(actor);
+
+  if (!market) {
+    throw new Error("Market not found.");
+  }
+
+  ensureUnresolvedMarketStatus(market.status);
+
+  const [updated] = await db
+    .update(markets)
+    .set({
+      status: parsed.status,
+      updatedAt: new Date(),
+    })
+    .where(eq(markets.id, marketId))
+    .returning();
 
   return (await mapMarketRows([updated]))[0];
 }
