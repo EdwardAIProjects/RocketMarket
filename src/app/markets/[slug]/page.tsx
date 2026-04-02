@@ -33,7 +33,7 @@ export async function generateMetadata({
 
   const description = buildMarketDescription(market);
   const url = getMarketUrl(market.slug);
-  const image = getMarketOgImageUrl(market.slug);
+  const image = getMarketOgImageUrl(market);
 
   return {
     title: buildMarketPageTitle(market),

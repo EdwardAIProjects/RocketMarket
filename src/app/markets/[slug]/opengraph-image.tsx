@@ -1,6 +1,9 @@
 import { ImageResponse } from "next/og";
 import { buildMarketDescription, getMarketForRoute } from "./market-metadata";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const size = {
   width: 1200,
   height: 630,
