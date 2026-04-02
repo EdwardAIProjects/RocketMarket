@@ -98,6 +98,7 @@ const adminUserUpdateSchema = z.object({
   name: trimmedString.min(1),
   email: trimmedString.email(),
   role: z.enum(["member", "admin"]),
+  isBanned: z.boolean(),
   startingBalance: z.number().min(0),
   cashBalance: z.number().min(0),
   bankruptcyCount: z.number().int().min(0),
@@ -324,9 +325,27 @@ function ensureAdminOrResolver(actor: UserRow, market: MarketRow) {
 }
 
 function ensureAdmin(actor: UserRow) {
+  if (actor.isBanned) {
+    throw new Error("You do not have permission to perform this action.");
+  }
+
   if (actor.role !== "admin") {
     throw new Error("You do not have permission to perform this action.");
   }
+}
+
+function activeAdminCountFromLocalState(state: LocalState) {
+  return state.users.filter((user) => user.role === "admin" && !user.isBanned).length;
+}
+
+async function activeAdminCountFromDb() {
+  const db = getRequiredDb();
+  const rows = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(users)
+    .where(and(eq(users.role, "admin"), eq(users.isBanned, false)));
+
+  return rows[0]?.count ?? 0;
 }
 
 function ensureUnresolvedMarketStatus(status: Market["status"]) {
@@ -618,6 +637,7 @@ export async function listAdminUsers(): Promise<AdminUserRecord[]> {
         name: user.name,
         email: user.email,
         role: user.role,
+        isBanned: user.isBanned,
         startingBalance: user.startingBalance,
         cashBalance: user.cashBalance,
         bankruptcyCount: user.bankruptcyCount,
@@ -636,6 +656,7 @@ export async function listAdminUsers(): Promise<AdminUserRecord[]> {
     name: user.name ?? user.email.split("@")[0] ?? "Unknown",
     email: user.email,
     role: user.role,
+    isBanned: user.isBanned,
     startingBalance: parseNumber(user.startingBalance),
     cashBalance: parseNumber(user.cashBalance),
     bankruptcyCount: user.bankruptcyCount,
@@ -670,7 +691,7 @@ export async function createMarket(input: CreateMarketInput & { resolverUserId?:
         closeTime: parsed.closeTime,
         resolveByTime: parsed.resolveByTime,
         resolutionCriteria: parsed.resolutionCriteria,
-        resolutionSource: parsed.resolutionSource,
+        resolutionSource: parsed.resolutionSource ?? "",
         createdByUserId: actorUserId,
         resolverUserId: resolverId,
         currentProbability: 0.5,
@@ -735,7 +756,7 @@ export async function createMarket(input: CreateMarketInput & { resolverUserId?:
       closeTime: new Date(parsed.closeTime),
       resolveByTime: new Date(parsed.resolveByTime),
       resolutionCriteria: parsed.resolutionCriteria,
-      resolutionSource: parsed.resolutionSource,
+      resolutionSource: parsed.resolutionSource ?? "",
       createdByUserId: actorUserId,
       resolverUserId: resolverId,
       currentProbability: "0.5000",
@@ -793,7 +814,7 @@ export async function updateAdminMarket(
       market.closeTime = parsed.closeTime;
       market.resolveByTime = parsed.resolveByTime;
       market.resolutionCriteria = parsed.resolutionCriteria;
-      market.resolutionSource = parsed.resolutionSource;
+      market.resolutionSource = parsed.resolutionSource ?? "";
       market.resolverUserId = parsed.resolverUserId;
       market.updatedAt = nowIso();
 
@@ -833,7 +854,7 @@ export async function updateAdminMarket(
       closeTime: new Date(parsed.closeTime),
       resolveByTime: new Date(parsed.resolveByTime),
       resolutionCriteria: parsed.resolutionCriteria,
-      resolutionSource: parsed.resolutionSource,
+      resolutionSource: parsed.resolutionSource ?? "",
       resolverUserId: parsed.resolverUserId,
       updatedAt: new Date(),
     })
@@ -913,6 +934,7 @@ export async function updateAdminUser(
     name: string;
     email: string;
     role: "member" | "admin";
+    isBanned: boolean;
     startingBalance: number;
     cashBalance: number;
     bankruptcyCount: number;
@@ -942,9 +964,19 @@ export async function updateAdminUser(
         throw new Error("Email is already in use.");
       }
 
+      const wouldRemoveLastActiveAdmin =
+        user.role === "admin" &&
+        !user.isBanned &&
+        (parsed.role !== "admin" || parsed.isBanned);
+
+      if (wouldRemoveLastActiveAdmin && activeAdminCountFromLocalState(state) <= 1) {
+        throw new Error("At least one active admin must remain.");
+      }
+
       user.name = parsed.name;
       user.email = parsed.email.toLowerCase();
       user.role = parsed.role;
+      user.isBanned = parsed.isBanned;
       user.startingBalance = parsed.startingBalance;
       user.cashBalance = parsed.cashBalance;
       user.bankruptcyCount = parsed.bankruptcyCount;
@@ -954,6 +986,7 @@ export async function updateAdminUser(
         name: user.name,
         email: user.email,
         role: user.role,
+        isBanned: user.isBanned,
         startingBalance: user.startingBalance,
         cashBalance: user.cashBalance,
         bankruptcyCount: user.bankruptcyCount,
@@ -989,12 +1022,22 @@ export async function updateAdminUser(
     throw new Error("Email is already in use.");
   }
 
+  const wouldRemoveLastActiveAdmin =
+    target.role === "admin" &&
+    !target.isBanned &&
+    (parsed.role !== "admin" || parsed.isBanned);
+
+  if (wouldRemoveLastActiveAdmin && (await activeAdminCountFromDb()) <= 1) {
+    throw new Error("At least one active admin must remain.");
+  }
+
   const [updated] = await db
     .update(users)
     .set({
       name: parsed.name,
       email: parsed.email.toLowerCase(),
       role: parsed.role,
+      isBanned: parsed.isBanned,
       startingBalance: parsed.startingBalance.toFixed(2),
       cashBalance: parsed.cashBalance.toFixed(2),
       bankruptcyCount: parsed.bankruptcyCount,
@@ -1007,6 +1050,7 @@ export async function updateAdminUser(
     name: updated.name ?? updated.email.split("@")[0] ?? "Unknown",
     email: updated.email,
     role: updated.role,
+    isBanned: updated.isBanned,
     startingBalance: parseNumber(updated.startingBalance),
     cashBalance: parseNumber(updated.cashBalance),
     bankruptcyCount: updated.bankruptcyCount,

@@ -114,7 +114,7 @@ npm run local:reset
 - Landing page with featured markets
 - Market detail page with chart and trade preview
 - Portfolio and leaderboard views
-- Admin market queue, metadata editing, manual open/close controls, deletion for untraded markets, and resolution UI
+- Admin market queue, metadata editing, manual open/close controls, deletion for untraded markets, user ban/unban controls, and resolution UI
 - Portfolio bankruptcy reset flow with persistent bankruptcy counts on the leaderboard
 - Typed market engine with unit tests
 - Postgres schema covering auth, markets, trades, positions, and ledger entries

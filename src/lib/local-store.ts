@@ -22,6 +22,7 @@ export interface LocalUser {
   name: string;
   email: string;
   role: LocalRole;
+  isBanned: boolean;
   startingBalance: number;
   cashBalance: number;
   bankruptcyCount: number;
@@ -190,6 +191,7 @@ function buildSeedState(): LocalState {
       name: user.name,
       email: user.email,
       role: user.role,
+      isBanned: false,
       startingBalance: 10000,
       cashBalance: leaderboardEntry?.cashBalance ?? 10000 - index * 500,
       bankruptcyCount: 0,
@@ -278,6 +280,10 @@ function normalizeLocalState(state: LocalState) {
     const nextId = mapLegacyId(user.id, legacyUserIdMap);
     if (nextId !== user.id) {
       user.id = nextId;
+      changed = true;
+    }
+    if (typeof user.isBanned !== "boolean") {
+      user.isBanned = false;
       changed = true;
     }
     if (typeof user.bankruptcyCount !== "number") {
@@ -464,6 +470,7 @@ export async function signInLocalUser(email: string) {
         name: emailName(normalized),
         email: normalized,
         role: adminEmails.has(normalized) || !hasAdmin ? "admin" : "member",
+        isBanned: false,
         startingBalance: 10000,
         cashBalance: 10000,
         bankruptcyCount: 0,
@@ -478,6 +485,10 @@ export async function signInLocalUser(email: string) {
         note: "Initial local test balance",
         createdAt: user.createdAt,
       });
+    }
+
+    if (user.isBanned) {
+      throw new Error("This account has been banned.");
     }
 
     return user;

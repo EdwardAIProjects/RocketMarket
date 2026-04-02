@@ -89,6 +89,7 @@ export interface AdminUserRecord {
   name: string;
   email: string;
   role: UserRole;
+  isBanned: boolean;
   startingBalance: number;
   cashBalance: number;
   bankruptcyCount: number;

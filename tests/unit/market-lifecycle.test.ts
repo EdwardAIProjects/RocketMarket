@@ -127,4 +127,78 @@ describe("market lifecycle", () => {
       "Markets with trades cannot be deleted.",
     );
   });
+
+  it("lets admins ban and unban local users", async () => {
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "rocketmarket-market-lifecycle-"));
+    const statePath = path.join(tempDir, "state.json");
+    const { readLocalState, updateAdminUser } = await loadLocalModules(statePath);
+
+    const seededState = await readLocalState();
+    const admin = seededState.users.find((entry) => entry.role === "admin");
+    const member = seededState.users.find((entry) => entry.role === "member");
+
+    if (!admin || !member) {
+      throw new Error("Expected a seeded admin and member.");
+    }
+
+    const banned = await updateAdminUser(
+      member.id,
+      {
+        name: member.name,
+        email: member.email,
+        role: member.role,
+        isBanned: true,
+        startingBalance: member.startingBalance,
+        cashBalance: member.cashBalance,
+        bankruptcyCount: member.bankruptcyCount,
+      },
+      admin.id,
+    );
+
+    const unbanned = await updateAdminUser(
+      member.id,
+      {
+        name: member.name,
+        email: member.email,
+        role: member.role,
+        isBanned: false,
+        startingBalance: member.startingBalance,
+        cashBalance: member.cashBalance,
+        bankruptcyCount: member.bankruptcyCount,
+      },
+      admin.id,
+    );
+
+    expect(banned.isBanned).toBe(true);
+    expect(unbanned.isBanned).toBe(false);
+  });
+
+  it("prevents removing the last active admin in local mode", async () => {
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "rocketmarket-market-lifecycle-"));
+    const statePath = path.join(tempDir, "state.json");
+    const { readLocalState, updateAdminUser } = await loadLocalModules(statePath);
+
+    const seededState = await readLocalState();
+    const admin = seededState.users.find((entry) => entry.role === "admin");
+
+    if (!admin) {
+      throw new Error("Expected a seeded admin.");
+    }
+
+    await expect(
+      updateAdminUser(
+        admin.id,
+        {
+          name: admin.name,
+          email: admin.email,
+          role: "admin",
+          isBanned: true,
+          startingBalance: admin.startingBalance,
+          cashBalance: admin.cashBalance,
+          bankruptcyCount: admin.bankruptcyCount,
+        },
+        admin.id,
+      ),
+    ).rejects.toThrow("At least one active admin must remain.");
+  });
 });

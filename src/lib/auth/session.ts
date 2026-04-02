@@ -7,30 +7,11 @@ import { isDemoMode, isLocalMode } from "@/lib/env";
 import { users } from "@/lib/db/schema";
 import { getLocalUserByEmail } from "@/lib/local-store";
 
-export async function getCurrentSession() {
-  if (isDemoMode()) {
-    return null;
-  }
-
-  return getServerSession(authOptions);
-}
-
-export async function getCurrentUser() {
-  if (isDemoMode()) {
-    return null;
-  }
-
-  const session = await getCurrentSession();
-  const email = session?.user?.email;
-
-  if (!email) {
-    return null;
-  }
-
+async function getActiveUserByEmail(email: string) {
   if (isLocalMode()) {
     const localUser = await getLocalUserByEmail(email);
 
-    if (!localUser) {
+    if (!localUser || localUser.isBanned) {
       return null;
     }
 
@@ -54,7 +35,43 @@ export async function getCurrentUser() {
   }
 
   const rows = await db.select().from(users).where(eq(users.email, email)).limit(1);
-  return rows[0] ?? null;
+  const user = rows[0] ?? null;
+
+  if (!user || user.isBanned) {
+    return null;
+  }
+
+  return user;
+}
+
+export async function getCurrentSession() {
+  if (isDemoMode()) {
+    return null;
+  }
+
+  const session = await getServerSession(authOptions);
+  const email = session?.user?.email;
+
+  if (!email) {
+    return session;
+  }
+
+  return (await getActiveUserByEmail(email)) ? session : null;
+}
+
+export async function getCurrentUser() {
+  if (isDemoMode()) {
+    return null;
+  }
+
+  const session = await getCurrentSession();
+  const email = session?.user?.email;
+
+  if (!email) {
+    return null;
+  }
+
+  return getActiveUserByEmail(email);
 }
 
 export async function requireCurrentUser(callbackPath?: string) {

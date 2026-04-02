@@ -38,8 +38,15 @@ export function AdminUserManager({ users }: { users: AdminUserRecord[] }) {
                     <div className="truncate text-sm font-semibold">{user.name}</div>
                     <div className="truncate text-xs text-[color:var(--muted)]">{user.email}</div>
                   </div>
-                  <div className="rounded-full border border-[color:var(--line)] px-2.5 py-1 text-[10px] uppercase tracking-[0.16em] text-[color:var(--muted)]">
-                    {user.role}
+                  <div className="flex items-center gap-2">
+                    {user.isBanned ? (
+                      <div className="rounded-full border border-rose-500/40 px-2.5 py-1 text-[10px] uppercase tracking-[0.16em] text-rose-200">
+                        banned
+                      </div>
+                    ) : null}
+                    <div className="rounded-full border border-[color:var(--line)] px-2.5 py-1 text-[10px] uppercase tracking-[0.16em] text-[color:var(--muted)]">
+                      {user.role}
+                    </div>
                   </div>
                 </div>
               </button>

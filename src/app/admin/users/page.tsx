@@ -16,7 +16,7 @@ export default async function AdminUsersPage() {
           <div>
             <div className="eyebrow">Admin</div>
             <h1 className="mt-3 text-4xl font-semibold tracking-tight">
-              Adjust user identity, roles, and balances.
+              Adjust user identity, roles, bans, and balances.
             </h1>
           </div>
           <Link

@@ -47,6 +47,7 @@ export const users = pgTable("users", {
   emailVerified: timestamp("email_verified", { withTimezone: true }),
   image: text("image"),
   role: userRoleEnum("role").default("member").notNull(),
+  isBanned: boolean("is_banned").default(false).notNull(),
   startingBalance: numeric("starting_balance", { precision: 12, scale: 2 })
     .default("10000")
     .notNull(),

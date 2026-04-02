@@ -10,6 +10,7 @@ export function AdminUserEditor({ user }: { user: AdminUserRecord }) {
     name: user.name,
     email: user.email,
     role: user.role,
+    isBanned: user.isBanned,
     startingBalance: String(user.startingBalance),
     cashBalance: String(user.cashBalance),
     bankruptcyCount: String(user.bankruptcyCount),
@@ -26,8 +27,15 @@ export function AdminUserEditor({ user }: { user: AdminUserRecord }) {
           <div className="text-lg font-semibold">{user.name}</div>
           <div className="text-sm text-[color:var(--muted)]">{user.email}</div>
         </div>
-        <div className="rounded-full border border-[color:var(--line)] px-3 py-1 text-xs uppercase tracking-[0.16em] text-[color:var(--muted)]">
-          {user.role}
+        <div className="flex items-center gap-2">
+          {user.isBanned ? (
+            <div className="rounded-full border border-rose-500/40 px-3 py-1 text-xs uppercase tracking-[0.16em] text-rose-200">
+              banned
+            </div>
+          ) : null}
+          <div className="rounded-full border border-[color:var(--line)] px-3 py-1 text-xs uppercase tracking-[0.16em] text-[color:var(--muted)]">
+            {user.role}
+          </div>
         </div>
       </div>
 
@@ -93,6 +101,22 @@ export function AdminUserEditor({ user }: { user: AdminUserRecord }) {
           >
             <option value="member">Member</option>
             <option value="admin">Admin</option>
+          </select>
+        </label>
+        <label className="block text-sm font-medium">
+          Status
+          <select
+            value={form.isBanned ? "banned" : "active"}
+            onChange={(event) =>
+              setForm((current) => ({
+                ...current,
+                isBanned: event.target.value === "banned",
+              }))
+            }
+            className="mt-2 w-full rounded-2xl border border-[color:var(--line)] bg-white/4 px-4 py-3 outline-none"
+          >
+            <option value="active">Active</option>
+            <option value="banned">Banned</option>
           </select>
         </label>
         <label className="block text-sm font-medium">

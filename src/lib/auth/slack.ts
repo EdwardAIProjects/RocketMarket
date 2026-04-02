@@ -146,6 +146,10 @@ async function upsertTeamUser(input: {
   let userId = existingUser?.id;
 
   if (existingUser) {
+    if (existingUser.isBanned) {
+      throw new Error("This account has been banned.");
+    }
+
     await db
       .update(users)
       .set({
@@ -286,6 +290,11 @@ export async function requestSlackVerificationCode(emailInput: string) {
 
   if (!db) {
     throw new Error("Slack login requires PostgreSQL-backed team mode.");
+  }
+
+  const [existingUser] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  if (existingUser?.isBanned) {
+    throw new Error("This account has been banned.");
   }
 
   const slackUser = await lookupSlackUserByEmail(email);

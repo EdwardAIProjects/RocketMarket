@@ -141,6 +141,7 @@ Behavior:
 - persists trades, balances, positions, and resolution data
 - persists bankruptcy counts alongside user balances so leaderboard labels survive resets
 - admin users are bootstrapped from `ADMIN_EMAILS`
+- admins can ban or unban users, and banned users cannot sign in or keep an active session
 
 ## Deployment model
 
