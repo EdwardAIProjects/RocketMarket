@@ -9,16 +9,13 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { formatProbability } from "@/lib/format";
+import { formatChartDate, formatProbability } from "@/lib/format";
 import type { ChartPoint } from "@/lib/types";
 
 export function MarketChart({ points }: { points: ChartPoint[] }) {
   const data = points.map((point) => ({
     ...point,
-    label: new Intl.DateTimeFormat("en-US", {
-      month: "short",
-      day: "numeric",
-    }).format(new Date(point.timestamp)),
+    label: formatChartDate(point.timestamp),
   }));
 
   return (

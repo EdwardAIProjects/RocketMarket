@@ -2,13 +2,17 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { getCurrentUser } from "@/lib/auth/session";
 import { createMarket, listMarkets } from "@/lib/data/service";
+import {
+  normalizeDateTimeToIso,
+  parsePacificDateTimePartsToIso,
+} from "@/lib/format";
 
 function normalizeDateTime(value: FormDataEntryValue | null) {
   if (typeof value !== "string" || value.length === 0) {
     return "";
   }
 
-  return new Date(value).toISOString();
+  return normalizeDateTimeToIso(value);
 }
 
 function combineDateAndTime(dateValue: FormDataEntryValue | null, timeValue: FormDataEntryValue | null) {
@@ -20,7 +24,7 @@ function combineDateAndTime(dateValue: FormDataEntryValue | null, timeValue: For
     return "";
   }
 
-  return new Date(`${dateValue}T${timeValue}`).toISOString();
+  return parsePacificDateTimePartsToIso(dateValue, timeValue);
 }
 
 export async function GET() {

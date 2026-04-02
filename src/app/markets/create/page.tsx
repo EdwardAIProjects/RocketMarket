@@ -23,6 +23,7 @@ export default async function CreateMarketPage({
           and criteria. This page posts to the market creation API and is ready to
           be connected to persistent storage.
         </p>
+        <p className="mt-3 text-sm text-[color:var(--muted)]">All dates and times are Pacific Time.</p>
         {error ? (
           <div className="mt-4 rounded-2xl border border-rose-500/35 bg-rose-500/12 px-4 py-3 text-sm font-medium text-rose-100">
             {error}

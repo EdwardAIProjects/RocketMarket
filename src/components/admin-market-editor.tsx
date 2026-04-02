@@ -3,6 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { MarketStatusBadge } from "@/components/market-status-badge";
+import {
+  formatPacificDateTimeInputValue,
+  parsePacificDateTimeInputToIso,
+} from "@/lib/format";
 import type { AdminUserRecord, Market } from "@/lib/types";
 
 export function AdminMarketEditor({
@@ -17,8 +21,8 @@ export function AdminMarketEditor({
     question: market.question,
     description: market.description,
     category: market.category,
-    closeTime: market.closeTime.slice(0, 16),
-    resolveByTime: market.resolveByTime.slice(0, 16),
+    closeTime: formatPacificDateTimeInputValue(market.closeTime),
+    resolveByTime: formatPacificDateTimeInputValue(market.resolveByTime),
     resolutionCriteria: market.resolutionCriteria,
     resolutionSource: market.resolutionSource,
     resolverUserId: market.resolver.id,
@@ -37,6 +41,7 @@ export function AdminMarketEditor({
         <h2 className="text-lg font-semibold">Update market metadata</h2>
         <MarketStatusBadge status={market.status} />
       </div>
+      <p className="mt-2 text-sm text-[color:var(--muted)]">All dates and times are Pacific Time.</p>
 
       <div className="mt-5 rounded-[22px] border border-[color:var(--line)] bg-white/4 p-4">
         <div className="text-xs uppercase tracking-[0.18em] text-[color:var(--muted)]">
@@ -122,8 +127,8 @@ export function AdminMarketEditor({
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               ...form,
-              closeTime: new Date(form.closeTime).toISOString(),
-              resolveByTime: new Date(form.resolveByTime).toISOString(),
+              closeTime: parsePacificDateTimeInputToIso(form.closeTime),
+              resolveByTime: parsePacificDateTimeInputToIso(form.resolveByTime),
             }),
           });
 
