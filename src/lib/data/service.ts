@@ -722,6 +722,7 @@ export async function createMarket(input: CreateMarketInput & { resolverUserId?:
       slug: slugify(parsed.question),
       ...parsed,
       description: parsed.description ?? "",
+      resolutionSource: parsed.resolutionSource ?? "",
       status: "open",
       currentProbability: 0.5,
       ammState: createCpmmState(0.5),
