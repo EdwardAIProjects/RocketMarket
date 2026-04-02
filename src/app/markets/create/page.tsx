@@ -2,23 +2,6 @@ import { requireCurrentUser } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 
-function formatDateTimeLocalValue(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-
-  return `${year}-${month}-${day}T${hours}:${minutes}`;
-}
-
-function nextDefaultAtHour(daysFromNow: number, hour: number) {
-  const date = new Date();
-  date.setDate(date.getDate() + daysFromNow);
-  date.setHours(hour, 0, 0, 0);
-  return formatDateTimeLocalValue(date);
-}
-
 export default async function CreateMarketPage({
   searchParams,
 }: {
@@ -26,8 +9,6 @@ export default async function CreateMarketPage({
 }) {
   await requireCurrentUser("/markets/create");
   const resolvedSearchParams = await searchParams;
-  const defaultCloseTime = nextDefaultAtHour(1, 17);
-  const defaultResolveByTime = nextDefaultAtHour(2, 17);
   const error = resolvedSearchParams?.error;
 
   return (
@@ -81,26 +62,42 @@ export default async function CreateMarketPage({
               placeholder="Extra context for traders, if needed."
             />
           </label>
-          <label className="text-sm font-medium">
+          <div className="text-sm font-medium">
             Close time
-            <input
-              type="datetime-local"
-              name="closeTime"
-              required
-              defaultValue={defaultCloseTime}
-              className="mt-2 w-full rounded-2xl border border-[color:var(--line)] bg-white/4 px-4 py-3 outline-none transition focus:border-[color:var(--accent)]"
-            />
-          </label>
-          <label className="text-sm font-medium">
+            <div className="mt-2 grid gap-3 sm:grid-cols-2">
+              <input
+                type="date"
+                name="closeDate"
+                required
+                className="w-full rounded-2xl border border-[color:var(--line)] bg-white/4 px-4 py-3 outline-none transition focus:border-[color:var(--accent)]"
+              />
+              <input
+                type="time"
+                name="closeTimeOnly"
+                required
+                defaultValue="17:00"
+                className="w-full rounded-2xl border border-[color:var(--line)] bg-white/4 px-4 py-3 outline-none transition focus:border-[color:var(--accent)]"
+              />
+            </div>
+          </div>
+          <div className="text-sm font-medium">
             Resolve by
-            <input
-              type="datetime-local"
-              name="resolveByTime"
-              required
-              defaultValue={defaultResolveByTime}
-              className="mt-2 w-full rounded-2xl border border-[color:var(--line)] bg-white/4 px-4 py-3 outline-none transition focus:border-[color:var(--accent)]"
-            />
-          </label>
+            <div className="mt-2 grid gap-3 sm:grid-cols-2">
+              <input
+                type="date"
+                name="resolveByDate"
+                required
+                className="w-full rounded-2xl border border-[color:var(--line)] bg-white/4 px-4 py-3 outline-none transition focus:border-[color:var(--accent)]"
+              />
+              <input
+                type="time"
+                name="resolveByTimeOnly"
+                required
+                defaultValue="17:00"
+                className="w-full rounded-2xl border border-[color:var(--line)] bg-white/4 px-4 py-3 outline-none transition focus:border-[color:var(--accent)]"
+              />
+            </div>
+          </div>
           <label className="text-sm font-medium md:col-span-2">
             Resolution criteria
             <textarea

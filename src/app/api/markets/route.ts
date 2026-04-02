@@ -11,6 +11,18 @@ function normalizeDateTime(value: FormDataEntryValue | null) {
   return new Date(value).toISOString();
 }
 
+function combineDateAndTime(dateValue: FormDataEntryValue | null, timeValue: FormDataEntryValue | null) {
+  if (typeof dateValue !== "string" || dateValue.length === 0) {
+    return "";
+  }
+
+  if (typeof timeValue !== "string" || timeValue.length === 0) {
+    return "";
+  }
+
+  return new Date(`${dateValue}T${timeValue}`).toISOString();
+}
+
 export async function GET() {
   const markets = await listMarkets();
   return NextResponse.json({
@@ -55,8 +67,15 @@ export async function POST(request: Request) {
             question: String(formData.get("question") ?? ""),
             description: String(formData.get("description") ?? ""),
             category: String(formData.get("category") ?? ""),
-            closeTime: normalizeDateTime(formData.get("closeTime")),
-            resolveByTime: normalizeDateTime(formData.get("resolveByTime")),
+            closeTime:
+              normalizeDateTime(formData.get("closeTime")) ||
+              combineDateAndTime(formData.get("closeDate"), formData.get("closeTimeOnly")),
+            resolveByTime:
+              normalizeDateTime(formData.get("resolveByTime")) ||
+              combineDateAndTime(
+                formData.get("resolveByDate"),
+                formData.get("resolveByTimeOnly"),
+              ),
             resolutionCriteria: String(formData.get("resolutionCriteria") ?? ""),
             resolutionSource: String(formData.get("resolutionSource") ?? ""),
           }));
