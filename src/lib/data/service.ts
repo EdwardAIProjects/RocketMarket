@@ -843,6 +843,70 @@ export async function updateAdminMarket(
   return (await mapMarketRows([updated]))[0];
 }
 
+export async function deleteAdminMarket(marketId: string, actorUserId: string) {
+  if (isLocalMode()) {
+    return withLocalState(async (state) => {
+      const actor = state.users.find((entry) => entry.id === actorUserId);
+      const market = state.markets.find((entry) => entry.id === marketId);
+
+      if (!actor || actor.role !== "admin") {
+        throw new Error("You do not have permission to perform this action.");
+      }
+
+      if (!market) {
+        throw new Error("Market not found.");
+      }
+
+      const hasTrades = state.trades.some((entry) => entry.marketId === marketId);
+
+      if (hasTrades) {
+        throw new Error("Markets with trades cannot be deleted.");
+      }
+
+      state.markets = state.markets.filter((entry) => entry.id !== marketId);
+      state.positions = state.positions.filter((entry) => entry.marketId !== marketId);
+      state.trades = state.trades.filter((entry) => entry.marketId !== marketId);
+      state.ledgerEntries = state.ledgerEntries.filter((entry) => entry.marketId !== marketId);
+      state.resolutionAuditLogs = state.resolutionAuditLogs.filter(
+        (entry) => entry.marketId !== marketId,
+      );
+      state.marketChartPoints = state.marketChartPoints.filter(
+        (entry) => entry.marketId !== marketId,
+      );
+    });
+    return;
+  }
+
+  if (isDemoMode()) {
+    throw new Error("Market deletion is unavailable in demo mode.");
+  }
+
+  const db = getRequiredDb();
+  const actor = await getUserRowById(actorUserId);
+  const market = await getMarketRowById(marketId);
+
+  if (!actor) {
+    throw new Error("User not found.");
+  }
+
+  ensureAdmin(actor);
+
+  if (!market) {
+    throw new Error("Market not found.");
+  }
+
+  const tradeCountRows = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(trades)
+    .where(eq(trades.marketId, marketId));
+
+  if ((tradeCountRows[0]?.count ?? 0) > 0) {
+    throw new Error("Markets with trades cannot be deleted.");
+  }
+
+  await db.delete(markets).where(eq(markets.id, marketId));
+}
+
 export async function updateAdminUser(
   userId: string,
   input: {

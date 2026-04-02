@@ -75,4 +75,56 @@ describe("market lifecycle", () => {
     expect(closed.status).toBe("closed");
     expect(reopened.status).toBe("open");
   });
+
+  it("lets admins delete local markets that have no trades", async () => {
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "rocketmarket-market-lifecycle-"));
+    const statePath = path.join(tempDir, "state.json");
+    const { createMarket, deleteAdminMarket, readLocalState, getMarketById } =
+      await loadLocalModules(statePath);
+
+    const seededState = await readLocalState();
+    const admin = seededState.users.find((entry) => entry.role === "admin");
+
+    if (!admin) {
+      throw new Error("Expected a seeded admin.");
+    }
+
+    const market = await createMarket(
+      {
+        question: "Will a deletion-safe draft market exist?",
+        description: "",
+        category: "Test",
+        closeTime: new Date(Date.now() + 60_000).toISOString(),
+        resolveByTime: new Date(Date.now() + 120_000).toISOString(),
+        resolutionCriteria: "Check whether the market exists.",
+        resolutionSource: "Admin test action",
+      },
+      admin.id,
+    );
+
+    await deleteAdminMarket(market.id, admin.id);
+
+    expect(await getMarketById(market.id)).toBeUndefined();
+    expect((await readLocalState()).markets.some((entry) => entry.id === market.id)).toBe(false);
+  });
+
+  it("blocks local market deletion once trades exist", async () => {
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "rocketmarket-market-lifecycle-"));
+    const statePath = path.join(tempDir, "state.json");
+    const { deleteAdminMarket, readLocalState } = await loadLocalModules(statePath);
+
+    const seededState = await readLocalState();
+    const admin = seededState.users.find((entry) => entry.role === "admin");
+    const tradedMarket = seededState.markets.find((market) =>
+      seededState.trades.some((trade) => trade.marketId === market.id),
+    );
+
+    if (!admin || !tradedMarket) {
+      throw new Error("Expected a seeded admin and traded market.");
+    }
+
+    await expect(deleteAdminMarket(tradedMarket.id, admin.id)).rejects.toThrow(
+      "Markets with trades cannot be deleted.",
+    );
+  });
 });

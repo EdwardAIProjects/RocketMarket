@@ -51,6 +51,11 @@ If you change the product shape, data model, auth model, or deployment flow, upd
 docker compose up --build
 ```
 
+The container startup is mode-aware:
+
+- team mode runs `db:push` before the app starts
+- local mode skips database schema sync and starts without Postgres
+
 6. For local development without Docker:
 
 ```bash
@@ -78,6 +83,7 @@ In local mode:
 - bankruptcy resets persist locally and still mark leaderboard names with a running bankruptcy count
 - the sandbox state lives at `LOCAL_STATE_PATH` or `/tmp/rocketmarket-local.json` by default
 - Slack workspace verification is not required
+- container startup also skips `db:push`, so `docker compose up --build` no longer requires a reachable Postgres instance in this mode
 
 Useful local test commands:
 
@@ -108,7 +114,7 @@ npm run local:reset
 - Landing page with featured markets
 - Market detail page with chart and trade preview
 - Portfolio and leaderboard views
-- Admin market queue, metadata editing, manual open/close controls, and resolution UI
+- Admin market queue, metadata editing, manual open/close controls, deletion for untraded markets, and resolution UI
 - Portfolio bankruptcy reset flow with persistent bankruptcy counts on the leaderboard
 - Typed market engine with unit tests
 - Postgres schema covering auth, markets, trades, positions, and ledger entries

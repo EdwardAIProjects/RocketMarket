@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build --webpack",
     "start": "next start",
+    "start:container": "node scripts/start-container.mjs",
     "lint": "eslint .",
     "test": "vitest run --coverage",
     "test:watch": "vitest",

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { getCurrentUser } from "@/lib/auth/session";
-import { updateAdminMarket } from "@/lib/data/service";
+import { deleteAdminMarket, updateAdminMarket } from "@/lib/data/service";
 
 export async function PATCH(
   request: Request,
@@ -25,6 +25,32 @@ export async function PATCH(
         : error instanceof Error
           ? error.message
           : "Market update failed.";
+
+    return NextResponse.json({ error: message }, { status: 400 });
+  }
+}
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const actor = await getCurrentUser();
+
+    if (!actor) {
+      return NextResponse.json({ error: "Sign in required." }, { status: 401 });
+    }
+
+    const { id } = await params;
+    await deleteAdminMarket(id, actor.id);
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    const message =
+      error instanceof ZodError
+        ? error.issues[0]?.message ?? "Market deletion failed."
+        : error instanceof Error
+          ? error.message
+          : "Market deletion failed.";
 
     return NextResponse.json({ error: message }, { status: 400 });
   }

@@ -32,6 +32,7 @@ This is not intended to be a real-money exchange, a decentralized protocol, or a
 - Markets move through `open -> closed -> resolved` or `canceled`
 - `closeTime` automatically moves overdue `open` markets to `closed`
 - Admins can manually reopen or close unresolved markets when operationally necessary
+- Admins can delete markets that have no trades yet
 - Resolution writes audit logs and settlement ledger entries
 - A canceled market refunds cost basis rather than inventing a winner
 
@@ -152,8 +153,9 @@ Current expected deployment shape:
 The container startup path currently expects:
 
 - env vars present
-- DB reachable
-- schema applied via `npm run db:push`
+- DB reachable in team mode
+- schema applied via `npm run db:push` in team mode
+- local mode to skip schema sync and boot directly against the JSON-backed sandbox state
 
 If deployment strategy changes, update both this file and `README.md`.
 

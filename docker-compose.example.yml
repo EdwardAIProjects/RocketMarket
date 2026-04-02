@@ -1,7 +1,7 @@
 services:
   web:
     build: .
-    command: sh -c "npm run db:push && npm run start"
+    command: npm run start:container
     ports:
       - "3000:3000"
     env_file:

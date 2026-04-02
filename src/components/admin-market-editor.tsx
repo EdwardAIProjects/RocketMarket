@@ -27,6 +27,7 @@ export function AdminMarketEditor({
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const statusLocked = market.status === "resolved" || market.status === "canceled";
 
   return (
@@ -234,10 +235,45 @@ export function AdminMarketEditor({
 
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || isDeleting}
           className="rounded-full bg-[color:var(--accent)] px-5 py-3 text-sm font-semibold text-slate-950 disabled:cursor-not-allowed disabled:opacity-65"
         >
           {isSubmitting ? "Saving..." : "Save market"}
+        </button>
+        <button
+          type="button"
+          disabled={isSubmitting || isUpdatingStatus || isDeleting}
+          className="ml-3 rounded-full border border-rose-400/25 bg-rose-400/12 px-5 py-3 text-sm font-semibold text-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
+          onClick={async () => {
+            const confirmed = window.confirm(
+              "Delete this market? Markets with trades cannot be deleted.",
+            );
+
+            if (!confirmed) {
+              return;
+            }
+
+            setIsDeleting(true);
+            setError(null);
+            setMessage(null);
+
+            const response = await fetch(`/api/admin/markets/${market.id}`, {
+              method: "DELETE",
+            });
+
+            const payload = (await response.json()) as { error?: string };
+
+            if (!response.ok) {
+              setError(payload.error ?? "Market deletion failed.");
+              setIsDeleting(false);
+              return;
+            }
+
+            router.push("/admin/markets");
+            router.refresh();
+          }}
+        >
+          {isDeleting ? "Deleting..." : "Delete market"}
         </button>
         {message ? <p className="text-sm font-medium text-[color:var(--accent)]">{message}</p> : null}
         {error ? <p className="text-sm font-medium text-rose-300">{error}</p> : null}
