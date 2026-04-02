@@ -41,6 +41,9 @@ export default async function AdminMarketsPage() {
                 <MarketStatusBadge status={market.status} />
                 <div className="mt-3 text-xl font-semibold">{market.question}</div>
                 <div className="mt-1 text-sm text-[color:var(--muted)]">
+                  Created by: {market.createdBy.name}
+                </div>
+                <div className="mt-1 text-sm text-[color:var(--muted)]">
                   Resolver: {market.resolver.name}
                 </div>
               </div>

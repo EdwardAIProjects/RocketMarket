@@ -33,6 +33,16 @@ export default async function AdminMarketDetailPage({
           <h1 className="mt-3 text-3xl font-semibold tracking-tight">{market.question}</h1>
           <div className="mt-5 space-y-4 text-sm">
             <div>
+              <div className="font-semibold">Created by</div>
+              <p className="mt-1 leading-6 text-[color:var(--muted)]">
+                {market.createdBy.name}
+              </p>
+            </div>
+            <div>
+              <div className="font-semibold">Resolver</div>
+              <p className="mt-1 leading-6 text-[color:var(--muted)]">{market.resolver.name}</p>
+            </div>
+            <div>
               <div className="font-semibold">Resolution criteria</div>
               <p className="mt-1 leading-6 text-[color:var(--muted)]">
                 {market.resolutionCriteria}
