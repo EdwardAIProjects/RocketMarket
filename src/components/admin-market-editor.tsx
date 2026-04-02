@@ -223,7 +223,7 @@ export function AdminMarketEditor({
         </label>
 
         <label className="block text-sm font-medium">
-          Resolution source
+          Resolution source <span className="text-[color:var(--muted)]">(optional)</span>
           <textarea
             value={form.resolutionSource}
             onChange={(event) =>

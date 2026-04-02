@@ -41,7 +41,7 @@ export default async function AdminMarketDetailPage({
             <div>
               <div className="font-semibold">Resolution source</div>
               <p className="mt-1 leading-6 text-[color:var(--muted)]">
-                {market.resolutionSource}
+                {market.resolutionSource || "No resolution source provided."}
               </p>
             </div>
             <div className="grid gap-3 md:grid-cols-2">

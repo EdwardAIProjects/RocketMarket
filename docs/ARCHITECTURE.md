@@ -28,7 +28,7 @@ This is not intended to be a real-money exchange, a decentralized protocol, or a
 
 ### Resolution model
 
-- Market creation requires explicit criteria and a source
+- Market creation requires explicit criteria and can optionally include a source
 - Markets move through `open -> closed -> resolved` or `canceled`
 - `closeTime` automatically moves overdue `open` markets to `closed`
 - Admins can manually reopen or close unresolved markets when operationally necessary

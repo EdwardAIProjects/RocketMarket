@@ -57,7 +57,7 @@ const createMarketSchema = z
     closeTime: trimmedString.datetime(),
     resolveByTime: trimmedString.datetime(),
     resolutionCriteria: trimmedString.min(1),
-    resolutionSource: trimmedString.min(1),
+    resolutionSource: optionalTrimmedString,
     resolverUserId: z.union([z.string().uuid(), z.literal("")]).optional(),
   })
   .refine((input) => new Date(input.resolveByTime) >= new Date(input.closeTime), {
@@ -86,7 +86,7 @@ const adminMarketUpdateSchema = z
     closeTime: trimmedString.datetime(),
     resolveByTime: trimmedString.datetime(),
     resolutionCriteria: trimmedString.min(1),
-    resolutionSource: trimmedString.min(1),
+    resolutionSource: optionalTrimmedString,
     resolverUserId: z.string().uuid(),
   })
   .refine((input) => new Date(input.resolveByTime) >= new Date(input.closeTime), {

@@ -58,7 +58,7 @@ export default async function MarketDetailPage({
               <div>
                 <div className="text-sm font-semibold">Resolution source</div>
                 <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">
-                  {market.resolutionSource}
+                  {market.resolutionSource || "No resolution source provided."}
                 </p>
               </div>
             </div>

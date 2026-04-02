@@ -32,7 +32,7 @@ export default async function CreateMarketPage() {
           Write the rules before anyone starts betting.
         </h1>
         <p className="mt-4 max-w-2xl text-base leading-7 text-[color:var(--muted)]">
-          RocketMarket markets need a clean question, close time, resolution source,
+          RocketMarket markets need a clean question, close time, optional resolution source,
           and criteria. This page posts to the market creation API and is ready to
           be connected to persistent storage.
         </p>
@@ -99,10 +99,9 @@ export default async function CreateMarketPage() {
             />
           </label>
           <label className="text-sm font-medium md:col-span-2">
-            Resolution source
+            Resolution source <span className="text-[color:var(--muted)]">(optional)</span>
             <textarea
               name="resolutionSource"
-              required
               className="mt-2 min-h-24 w-full rounded-2xl border border-[color:var(--line)] bg-white/4 px-4 py-3 outline-none transition focus:border-[color:var(--accent)]"
             />
           </label>
