@@ -284,7 +284,6 @@ export default async function Image({
             display: "flex",
             flexDirection: "column",
             marginTop: 22,
-            flex: 1,
             borderRadius: 30,
             padding: "22px 24px 18px",
             background: "rgba(9, 21, 39, 0.86)",
@@ -311,15 +310,16 @@ export default async function Image({
             <div
               style={{
                 display: "flex",
-                flex: 1,
                 marginTop: 18,
                 borderRadius: 22,
                 padding: "20px 20px 16px",
+                width: 1054,
+                height: 272,
                 background: "rgba(255, 255, 255, 0.03)",
                 border: "1px solid rgba(255, 255, 255, 0.08)",
               }}
             >
-              <svg width="100%" height="100%" viewBox="0 0 940 235">
+              <svg width="1012" height="235" viewBox="0 0 940 235">
                 <defs>
                   <linearGradient id="rocketOgGradient" x1="0" x2="0" y1="0" y2="1">
                     <stop offset="0%" stopColor="#65a7ff" stopOpacity="0.58" />
