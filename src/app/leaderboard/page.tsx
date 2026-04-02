@@ -32,7 +32,6 @@ export default async function LeaderboardPage() {
                       </span>
                     ) : null}
                   </div>
-                  <div className="text-sm text-[color:var(--muted)]">{entry.user.email}</div>
                 </div>
               </div>
               <div className="grid gap-4 text-right sm:grid-cols-3 sm:text-left">

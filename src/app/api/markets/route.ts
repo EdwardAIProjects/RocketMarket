@@ -13,7 +13,19 @@ function normalizeDateTime(value: FormDataEntryValue | null) {
 
 export async function GET() {
   const markets = await listMarkets();
-  return NextResponse.json({ markets });
+  return NextResponse.json({
+    markets: markets.map((market) => ({
+      ...market,
+      resolver: {
+        ...market.resolver,
+        email: undefined,
+      },
+      createdBy: {
+        ...market.createdBy,
+        email: undefined,
+      },
+    })),
+  });
 }
 
 export async function POST(request: Request) {

@@ -3,5 +3,13 @@ import { getLeaderboard } from "@/lib/data/service";
 
 export async function GET() {
   const leaderboard = await getLeaderboard();
-  return NextResponse.json({ leaderboard });
+  return NextResponse.json({
+    leaderboard: leaderboard.map((entry) => ({
+      ...entry,
+      user: {
+        ...entry.user,
+        email: undefined,
+      },
+    })),
+  });
 }
