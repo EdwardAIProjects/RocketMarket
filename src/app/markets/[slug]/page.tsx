@@ -1,14 +1,68 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { MarketBetList } from "@/components/market-bet-list";
 import { MarketChart } from "@/components/market-chart";
 import { StatPill } from "@/components/stat-pill";
 import { TradePanel } from "@/components/trade-panel";
-import { getMarketBySlug } from "@/lib/data/service";
 import {
   formatCompactNumber,
   formatDateTime,
   formatProbability,
 } from "@/lib/format";
+import {
+  buildMarketDescription,
+  buildMarketPageTitle,
+  getMarketForRoute,
+  getMarketOgImageUrl,
+  getMarketUrl,
+} from "./market-metadata";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const market = await getMarketForRoute(slug);
+
+  if (!market) {
+    return {
+      title: "Market Not Found | RocketMarket",
+    };
+  }
+
+  const description = buildMarketDescription(market);
+  const url = getMarketUrl(market.slug);
+  const image = getMarketOgImageUrl(market.slug);
+
+  return {
+    title: buildMarketPageTitle(market),
+    description,
+    alternates: {
+      canonical: url,
+    },
+    openGraph: {
+      title: market.question,
+      description,
+      url,
+      type: "website",
+      images: [
+        {
+          url: image,
+          width: 1200,
+          height: 630,
+          alt: `${market.question} market card`,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: market.question,
+      description,
+      images: [image],
+    },
+  };
+}
 
 export default async function MarketDetailPage({
   params,
@@ -16,7 +70,7 @@ export default async function MarketDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const market = await getMarketBySlug(slug);
+  const market = await getMarketForRoute(slug);
 
   if (!market) {
     notFound();
