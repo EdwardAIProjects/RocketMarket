@@ -19,10 +19,16 @@ function nextDefaultAtHour(daysFromNow: number, hour: number) {
   return formatDateTimeLocalValue(date);
 }
 
-export default async function CreateMarketPage() {
+export default async function CreateMarketPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ error?: string }>;
+}) {
   await requireCurrentUser("/markets/create");
+  const resolvedSearchParams = await searchParams;
   const defaultCloseTime = nextDefaultAtHour(1, 17);
   const defaultResolveByTime = nextDefaultAtHour(2, 17);
+  const error = resolvedSearchParams?.error;
 
   return (
     <div className="space-y-6">
@@ -36,6 +42,11 @@ export default async function CreateMarketPage() {
           and criteria. This page posts to the market creation API and is ready to
           be connected to persistent storage.
         </p>
+        {error ? (
+          <div className="mt-4 rounded-2xl border border-rose-500/35 bg-rose-500/12 px-4 py-3 text-sm font-medium text-rose-100">
+            {error}
+          </div>
+        ) : null}
       </section>
 
       <form

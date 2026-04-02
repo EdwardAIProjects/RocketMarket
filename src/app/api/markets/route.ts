@@ -29,17 +29,27 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const contentType = request.headers.get("content-type") ?? "";
+  const isJsonRequest = contentType.includes("application/json");
+
   try {
     const actor = await getCurrentUser();
 
     if (!actor) {
-      return NextResponse.json({ error: "Sign in required." }, { status: 401 });
+      if (isJsonRequest) {
+        return NextResponse.json({ error: "Sign in required." }, { status: 401 });
+      }
+
+      return new NextResponse(null, {
+        status: 303,
+        headers: {
+          Location: "/login?callbackUrl=%2Fmarkets%2Fcreate",
+        },
+      });
     }
 
-    const contentType = request.headers.get("content-type") ?? "";
-
     const input =
-      contentType.includes("application/json")
+      isJsonRequest
         ? await request.json()
         : await request.formData().then((formData) => ({
             question: String(formData.get("question") ?? ""),
@@ -53,7 +63,7 @@ export async function POST(request: Request) {
 
     const market = await createMarket(input, actor.id);
 
-    if (contentType.includes("application/json")) {
+    if (isJsonRequest) {
       return NextResponse.json({ market }, { status: 201 });
     }
 
@@ -71,6 +81,15 @@ export async function POST(request: Request) {
           ? error.message
           : "Market creation failed.";
 
-    return NextResponse.json({ error: message }, { status: 400 });
+    if (isJsonRequest) {
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+
+    return new NextResponse(null, {
+      status: 303,
+      headers: {
+        Location: `/markets/create?error=${encodeURIComponent(message)}`,
+      },
+    });
   }
 }
