@@ -37,6 +37,30 @@ describe("quoteTrade", () => {
 
     expect(large.shares / 500).toBeLessThan(small.shares / 50);
   });
+
+  it("moves the market down when selling YES", () => {
+    const quote = quoteTrade({
+      side: "sell_yes",
+      amount: 25,
+      ammState: createCpmmState(0.64),
+    });
+
+    expect(quote.probabilityAfter).toBeLessThan(quote.probabilityBefore);
+    expect(quote.maxPayout).toBeGreaterThan(0);
+    expect(quote.maxPayout).toBeLessThan(quote.shares);
+  });
+
+  it("moves the market up when selling NO", () => {
+    const quote = quoteTrade({
+      side: "sell_no",
+      amount: 25,
+      ammState: createCpmmState(0.36),
+    });
+
+    expect(quote.probabilityAfter).toBeGreaterThan(quote.probabilityBefore);
+    expect(quote.maxPayout).toBeGreaterThan(0);
+    expect(quote.maxPayout).toBeLessThan(quote.shares);
+  });
 });
 
 describe("settlementValue", () => {

@@ -36,6 +36,7 @@ import type {
   LeaderboardEntry,
   Market,
   MarketBetSummary,
+  Position,
   PortfolioSnapshot,
   ResolutionPayload,
   TradeQuote,
@@ -1925,6 +1926,55 @@ export async function getPortfolio(userId?: string): Promise<PortfolioSnapshot> 
     ),
     unrealizedPnl,
     positions: positionsView,
+  };
+}
+
+export async function getUserPositionForMarket(
+  userId: string | undefined,
+  marketId: string,
+): Promise<Pick<Position, "yesShares" | "noShares" | "avgYesPrice" | "avgNoPrice"> | null> {
+  if (!userId) {
+    return null;
+  }
+
+  if (isLocalMode()) {
+    const state = await readLocalState();
+    const position = getLocalPosition(state, userId, marketId);
+
+    if (!position) {
+      return null;
+    }
+
+    return {
+      yesShares: position.yesShares,
+      noShares: position.noShares,
+      avgYesPrice: position.avgYesPrice,
+      avgNoPrice: position.avgNoPrice,
+    };
+  }
+
+  if (isDemoMode()) {
+    return null;
+  }
+
+  const db = getRequiredDb();
+  const position = (
+    await db
+      .select()
+      .from(positions)
+      .where(and(eq(positions.marketId, marketId), eq(positions.userId, userId)))
+      .limit(1)
+  )[0];
+
+  if (!position) {
+    return null;
+  }
+
+  return {
+    yesShares: parseNumber(position.yesShares),
+    noShares: parseNumber(position.noShares),
+    avgYesPrice: parseNumber(position.avgYesPrice),
+    avgNoPrice: parseNumber(position.avgNoPrice),
   };
 }
 

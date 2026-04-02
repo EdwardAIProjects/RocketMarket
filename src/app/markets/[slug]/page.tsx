@@ -4,6 +4,8 @@ import { MarketBetList } from "@/components/market-bet-list";
 import { MarketChart } from "@/components/market-chart";
 import { StatPill } from "@/components/stat-pill";
 import { TradePanel } from "@/components/trade-panel";
+import { getCurrentUser } from "@/lib/auth/session";
+import { getUserPositionForMarket } from "@/lib/data/service";
 import {
   formatCompactNumber,
   formatDateTime,
@@ -76,6 +78,9 @@ export default async function MarketDetailPage({
     notFound();
   }
 
+  const actor = await getCurrentUser();
+  const position = await getUserPositionForMarket(actor?.id, market.id);
+
   return (
     <div className="space-y-6">
       <section className="panel rounded-[24px] px-6 py-6 sm:px-7">
@@ -125,6 +130,7 @@ export default async function MarketDetailPage({
             probability={market.currentProbability}
             ammState={market.ammState}
             marketStatus={market.status}
+            position={position}
           />
           <div className="panel rounded-[22px] p-5">
             <div className="eyebrow">Market Stats</div>
