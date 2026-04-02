@@ -60,6 +60,7 @@ function buildChartGeometry(points: Array<{ probability: number }>, width: numbe
   return {
     area: `0,${height} ${graphPoints.join(" ")} ${width},${height}`,
     line: graphPoints.join(" "),
+    lastPoint: graphPoints.at(-1) ?? `${width / 2},${height / 2}`,
   };
 }
 
@@ -97,10 +98,11 @@ export default async function Image({
 
   const yesPercent = Math.round(market.currentProbability * 100);
   const noPercent = 100 - yesPercent;
-  const chart = buildChartGeometry(market.chart, 430, 180);
-  const description = summarize(buildMarketDescription(market), 180);
+  const chart = buildChartGeometry(market.chart, 940, 235);
+  const description = summarize(buildMarketDescription(market), 146);
   const impliedYesPrice = formatMoney(market.currentProbability);
   const impliedNoPrice = formatMoney(1 - market.currentProbability);
+  const [lastX, lastY] = chart.lastPoint.split(",");
 
   return new ImageResponse(
     (
@@ -168,23 +170,23 @@ export default async function Image({
           </div>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", maxWidth: 720 }}>
+        <div style={{ display: "flex", flexDirection: "column", maxWidth: 1120 }}>
           <div
             style={{
               display: "flex",
-              fontSize: 52,
+              fontSize: 48,
               fontWeight: 800,
               lineHeight: 1.08,
               letterSpacing: -1.8,
             }}
           >
-            {summarize(market.question, 118)}
+            {summarize(market.question, 126)}
           </div>
           <div
             style={{
               display: "flex",
-              marginTop: 16,
-              fontSize: 24,
+              marginTop: 14,
+              fontSize: 22,
               lineHeight: 1.35,
               color: "rgba(214, 225, 255, 0.78)",
             }}
@@ -196,100 +198,30 @@ export default async function Image({
         <div
           style={{
             display: "flex",
-            gap: 28,
-            marginTop: 34,
-            flex: 1,
+            gap: 18,
+            marginTop: 26,
+            flexWrap: "wrap",
           }}
         >
-          <div style={{ display: "flex", flexDirection: "column", width: 540 }}>
-            <div
-              style={{
-                display: "flex",
-                gap: 18,
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  flex: 1,
-                  borderRadius: 28,
-                  padding: "22px 24px",
-                  background: "rgba(58, 214, 156, 0.12)",
-                  border: "1px solid rgba(58, 214, 156, 0.22)",
-                }}
-              >
-                <div style={{ display: "flex", fontSize: 19, color: "rgba(188, 255, 225, 0.82)" }}>
-                  YES
-                </div>
-                <div style={{ display: "flex", marginTop: 10, fontSize: 58, fontWeight: 800 }}>
-                  {yesPercent}%
-                </div>
-                <div style={{ display: "flex", marginTop: 8, fontSize: 22, color: "rgba(188, 255, 225, 0.88)" }}>
-                  Implied price {impliedYesPrice}
-                </div>
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  flex: 1,
-                  borderRadius: 28,
-                  padding: "22px 24px",
-                  background: "rgba(255, 112, 112, 0.12)",
-                  border: "1px solid rgba(255, 112, 112, 0.22)",
-                }}
-              >
-                <div style={{ display: "flex", fontSize: 19, color: "rgba(255, 206, 206, 0.82)" }}>
-                  NO
-                </div>
-                <div style={{ display: "flex", marginTop: 10, fontSize: 58, fontWeight: 800 }}>
-                  {noPercent}%
-                </div>
-                <div style={{ display: "flex", marginTop: 8, fontSize: 22, color: "rgba(255, 206, 206, 0.88)" }}>
-                  Implied price {impliedNoPrice}
-                </div>
-              </div>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              width: 206,
+              borderRadius: 28,
+              padding: "22px 24px",
+              background: "rgba(58, 214, 156, 0.12)",
+              border: "1px solid rgba(58, 214, 156, 0.22)",
+            }}
+          >
+            <div style={{ display: "flex", fontSize: 19, color: "rgba(188, 255, 225, 0.82)" }}>
+              YES
             </div>
-
-            <div
-              style={{
-                display: "flex",
-                gap: 16,
-                marginTop: 18,
-              }}
-            >
-              {[
-                { label: "Volume", value: formatMoney(market.volume) },
-                { label: "Traders", value: `${market.tradersCount}` },
-                {
-                  label: market.status === "open" ? "Closes" : "Resolve by",
-                  value: formatDateTime(
-                    market.status === "open" ? market.closeTime : market.resolveByTime,
-                  ),
-                },
-              ].map((stat) => (
-                <div
-                  key={stat.label}
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    flex: stat.label === "Traders" ? "0 0 132px" : 1,
-                    borderRadius: 24,
-                    padding: "18px 20px",
-                    background: "rgba(255, 255, 255, 0.06)",
-                    border: "1px solid rgba(255, 255, 255, 0.1)",
-                  }}
-                >
-                  <div style={{ display: "flex", fontSize: 17, color: "rgba(214, 225, 255, 0.66)" }}>
-                    {stat.label}
-                  </div>
-                  <div style={{ display: "flex", marginTop: 10, fontSize: 28, fontWeight: 700, lineHeight: 1.15 }}>
-                    {stat.value}
-                  </div>
-                </div>
-              ))}
+            <div style={{ display: "flex", marginTop: 10, fontSize: 60, fontWeight: 800 }}>
+              {yesPercent}%
+            </div>
+            <div style={{ display: "flex", marginTop: 8, fontSize: 22, color: "rgba(188, 255, 225, 0.88)" }}>
+              Implied price {impliedYesPrice}
             </div>
           </div>
 
@@ -297,15 +229,76 @@ export default async function Image({
             style={{
               display: "flex",
               flexDirection: "column",
-              flex: 1,
-              borderRadius: 30,
+              width: 206,
+              borderRadius: 28,
               padding: "22px 24px",
-              background: "rgba(9, 21, 39, 0.86)",
-              border: "1px solid rgba(101, 167, 255, 0.18)",
+              background: "rgba(255, 112, 112, 0.12)",
+              border: "1px solid rgba(255, 112, 112, 0.22)",
+            }}
+          >
+            <div style={{ display: "flex", fontSize: 19, color: "rgba(255, 206, 206, 0.82)" }}>
+              NO
+            </div>
+            <div style={{ display: "flex", marginTop: 10, fontSize: 60, fontWeight: 800 }}>
+              {noPercent}%
+            </div>
+            <div style={{ display: "flex", marginTop: 8, fontSize: 22, color: "rgba(255, 206, 206, 0.88)" }}>
+              Implied price {impliedNoPrice}
+            </div>
+          </div>
+
+          {[
+            { label: "Volume", value: formatMoney(market.volume) },
+            { label: "Traders", value: `${market.tradersCount}` },
+            {
+              label: market.status === "open" ? "Closes" : "Resolve by",
+              value: formatDateTime(
+                market.status === "open" ? market.closeTime : market.resolveByTime,
+              ),
+            },
+          ].map((stat) => (
+            <div
+              key={stat.label}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                width: stat.label === "Traders" ? 150 : 268,
+                borderRadius: 24,
+                padding: "18px 20px",
+                background: "rgba(255, 255, 255, 0.06)",
+                border: "1px solid rgba(255, 255, 255, 0.1)",
+              }}
+            >
+              <div style={{ display: "flex", fontSize: 17, color: "rgba(214, 225, 255, 0.66)" }}>
+                {stat.label}
+              </div>
+              <div style={{ display: "flex", marginTop: 10, fontSize: 28, fontWeight: 700, lineHeight: 1.15 }}>
+                {stat.value}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            marginTop: 22,
+            flex: 1,
+            borderRadius: 30,
+            padding: "22px 24px 18px",
+            background: "rgba(9, 21, 39, 0.86)",
+            border: "1px solid rgba(101, 167, 255, 0.18)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div style={{ display: "flex", fontSize: 20, fontWeight: 700 }}>Probability History</div>
+              <div style={{ display: "flex", fontSize: 24, fontWeight: 700 }}>Probability History</div>
               <div style={{ display: "flex", fontSize: 17, color: "rgba(214, 225, 255, 0.66)" }}>
                 {market.chart.length > 0
                   ? `${formatShortDate(market.chart[0].timestamp)} to ${formatShortDate(
@@ -321,29 +314,43 @@ export default async function Image({
                 flex: 1,
                 marginTop: 18,
                 borderRadius: 22,
-                padding: "18px 18px 14px",
+                padding: "20px 20px 16px",
                 background: "rgba(255, 255, 255, 0.03)",
                 border: "1px solid rgba(255, 255, 255, 0.08)",
               }}
             >
-              <svg width="100%" height="100%" viewBox="0 0 430 180">
-                <line x1="0" y1="0" x2="430" y2="0" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
-                <line x1="0" y1="90" x2="430" y2="90" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
-                <line x1="0" y1="180" x2="430" y2="180" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
-                <polygon points={chart.area} fill="rgba(101, 167, 255, 0.18)" />
+              <svg width="100%" height="100%" viewBox="0 0 940 235">
+                <defs>
+                  <linearGradient id="rocketOgGradient" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stopColor="#65a7ff" stopOpacity="0.58" />
+                    <stop offset="100%" stopColor="#65a7ff" stopOpacity="0.06" />
+                  </linearGradient>
+                </defs>
+                <line x1="0" y1="0" x2="940" y2="0" stroke="rgba(148,182,255,0.14)" strokeWidth="1" />
+                <line x1="0" y1="58.75" x2="940" y2="58.75" stroke="rgba(148,182,255,0.08)" strokeWidth="1" />
+                <line x1="0" y1="117.5" x2="940" y2="117.5" stroke="rgba(148,182,255,0.08)" strokeWidth="1" />
+                <line x1="0" y1="176.25" x2="940" y2="176.25" stroke="rgba(148,182,255,0.08)" strokeWidth="1" />
+                <line x1="0" y1="235" x2="940" y2="235" stroke="rgba(148,182,255,0.14)" strokeWidth="1" />
+                <polygon points={chart.area} fill="url(#rocketOgGradient)" />
                 <polyline
                   points={chart.line}
                   fill="none"
                   stroke="rgb(101, 167, 255)"
-                  strokeWidth="6"
+                  strokeWidth="8"
                   strokeLinejoin="round"
                   strokeLinecap="round"
                 />
                 <circle
-                  cx={chart.line.split(" ").at(-1)?.split(",")[0] ?? "215"}
-                  cy={chart.line.split(" ").at(-1)?.split(",")[1] ?? "90"}
-                  r="8"
+                  cx={lastX}
+                  cy={lastY}
+                  r="11"
                   fill="rgb(101, 167, 255)"
+                />
+                <circle
+                  cx={lastX}
+                  cy={lastY}
+                  r="21"
+                  fill="rgba(101, 167, 255, 0.18)"
                 />
               </svg>
             </div>
@@ -357,9 +364,21 @@ export default async function Image({
                 color: "rgba(214, 225, 255, 0.68)",
               }}
             >
-              <div style={{ display: "flex" }}>0%</div>
-              <div style={{ display: "flex" }}>50%</div>
-              <div style={{ display: "flex" }}>100%</div>
+              <div style={{ display: "flex", gap: 18 }}>
+                <div style={{ display: "flex" }}>100%</div>
+                <div style={{ display: "flex" }}>50%</div>
+                <div style={{ display: "flex" }}>0%</div>
+              </div>
+              <div style={{ display: "flex", gap: 22 }}>
+                {market.chart.length > 0 && (
+                  <div style={{ display: "flex" }}>{formatShortDate(market.chart[0].timestamp)}</div>
+                )}
+                {market.chart.length > 1 && (
+                  <div style={{ display: "flex" }}>
+                    {formatShortDate(market.chart[market.chart.length - 1].timestamp)}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
