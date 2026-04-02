@@ -15,7 +15,7 @@ export default async function PortfolioPage() {
       <section className="panel rounded-[36px] px-6 py-7 sm:px-8">
         <div className="eyebrow">Portfolio</div>
         <h1 className="mt-3 text-4xl font-semibold tracking-tight">
-          {portfolio.user.name}&apos;s play-money book
+          {portfolio.user.name}&apos;s portfolio
         </h1>
         <div className="mt-6 grid gap-4 md:grid-cols-3">
           <div className="rounded-[24px] border border-[color:var(--line)] bg-white/4 p-5">

@@ -243,7 +243,7 @@ export function TradePanel({
       <p className="mt-3 text-xs leading-5 text-[color:var(--muted)]">
         {tradingDisabled
           ? "Trading is disabled because this market is no longer open."
-          : "Trades update your fake-money balance immediately and move the market."}
+          : "Trades update your balance immediately and move the market."}
       </p>
       {message ? <p className="mt-3 text-sm font-medium text-[color:var(--accent-strong)]">{message}</p> : null}
     </div>

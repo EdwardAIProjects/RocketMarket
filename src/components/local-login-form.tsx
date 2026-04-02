@@ -54,7 +54,7 @@ export function LocalLoginForm() {
       <div className="eyebrow">Local login</div>
       <h1 className="mt-3 text-3xl font-semibold tracking-tight">Sign in for local testing</h1>
       <p className="mt-3 text-sm leading-6 text-[color:var(--muted)]">
-        Use any email address. New emails create new local test accounts with a fake-money balance.
+        Use any email address. New emails create new local test accounts with a sandbox balance.
       </p>
 
       <label className="mt-6 block text-sm font-medium">
