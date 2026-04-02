@@ -2,8 +2,27 @@ import { requireCurrentUser } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 
+function formatDateTimeLocalValue(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+function nextDefaultAtHour(daysFromNow: number, hour: number) {
+  const date = new Date();
+  date.setDate(date.getDate() + daysFromNow);
+  date.setHours(hour, 0, 0, 0);
+  return formatDateTimeLocalValue(date);
+}
+
 export default async function CreateMarketPage() {
   await requireCurrentUser("/markets/create");
+  const defaultCloseTime = nextDefaultAtHour(1, 17);
+  const defaultResolveByTime = nextDefaultAtHour(2, 17);
 
   return (
     <div className="space-y-6">
@@ -57,6 +76,7 @@ export default async function CreateMarketPage() {
               type="datetime-local"
               name="closeTime"
               required
+              defaultValue={defaultCloseTime}
               className="mt-2 w-full rounded-2xl border border-[color:var(--line)] bg-white/4 px-4 py-3 outline-none transition focus:border-[color:var(--accent)]"
             />
           </label>
@@ -66,6 +86,7 @@ export default async function CreateMarketPage() {
               type="datetime-local"
               name="resolveByTime"
               required
+              defaultValue={defaultResolveByTime}
               className="mt-2 w-full rounded-2xl border border-[color:var(--line)] bg-white/4 px-4 py-3 outline-none transition focus:border-[color:var(--accent)]"
             />
           </label>
