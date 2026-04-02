@@ -7,7 +7,11 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "RocketMarket",
-  description: "A play-money prediction market for a school rocketry team.",
+  description: "Polymarket but for UBCRocket.",
+  openGraph: {
+    title: "RocketMarket",
+    description: "Polymarket but for UBCRocket.",
+  },
 };
 
 export default function RootLayout({
