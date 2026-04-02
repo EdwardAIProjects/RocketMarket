@@ -115,11 +115,13 @@ export default async function Image({
           height: "100%",
           display: "flex",
           flexDirection: "column",
+          justifyContent: "flex-start",
           background:
             "radial-gradient(circle at top left, rgba(50,90,160,0.38), transparent 26%), radial-gradient(circle at 85% 10%, rgba(101,167,255,0.22), transparent 20%), linear-gradient(180deg, rgb(8, 17, 31) 0%, rgb(12, 20, 36) 50%, rgb(10, 17, 32) 100%)",
           color: "rgb(238, 244, 255)",
-          padding: "44px 48px",
+          padding: "30px 36px 24px",
           fontFamily: "sans-serif",
+          overflow: "hidden",
         }}
       >
         <div
@@ -127,7 +129,7 @@ export default async function Image({
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            marginBottom: 26,
+            marginBottom: 16,
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
@@ -135,10 +137,10 @@ export default async function Image({
               style={{
                 display: "flex",
                 borderRadius: 999,
-                padding: "10px 18px",
+                padding: "8px 14px",
                 background: "rgba(101, 167, 255, 0.14)",
                 border: "1px solid rgba(101, 167, 255, 0.3)",
-                fontSize: 20,
+                fontSize: 16,
                 fontWeight: 700,
                 letterSpacing: 1.2,
                 textTransform: "uppercase",
@@ -150,10 +152,10 @@ export default async function Image({
               style={{
                 display: "flex",
                 borderRadius: 999,
-                padding: "10px 18px",
+                padding: "8px 14px",
                 background: "rgba(255, 255, 255, 0.07)",
                 border: "1px solid rgba(255, 255, 255, 0.12)",
-                fontSize: 20,
+                fontSize: 16,
                 fontWeight: 600,
                 textTransform: "capitalize",
               }}
@@ -164,7 +166,7 @@ export default async function Image({
           <div
             style={{
               display: "flex",
-              fontSize: 22,
+              fontSize: 18,
               color: "rgba(214, 225, 255, 0.92)",
               letterSpacing: 0.6,
             }}
@@ -177,20 +179,20 @@ export default async function Image({
           <div
             style={{
               display: "flex",
-              fontSize: 48,
+              fontSize: 40,
               fontWeight: 800,
               lineHeight: 1.08,
               letterSpacing: -1.8,
             }}
           >
-            {summarize(market.question, 126)}
+            {summarize(market.question, 118)}
           </div>
           <div
             style={{
               display: "flex",
-              marginTop: 14,
-              fontSize: 22,
-              lineHeight: 1.35,
+              marginTop: 10,
+              fontSize: 18,
+              lineHeight: 1.28,
               color: "rgba(214, 225, 255, 0.78)",
             }}
           >
@@ -201,29 +203,30 @@ export default async function Image({
         <div
           style={{
             display: "flex",
-            gap: 18,
-            marginTop: 26,
-            flexWrap: "wrap",
+            gap: 12,
+            marginTop: 18,
+            flexWrap: "nowrap",
+            height: 118,
           }}
         >
           <div
             style={{
               display: "flex",
               flexDirection: "column",
-              width: 206,
-              borderRadius: 28,
-              padding: "22px 24px",
+              width: 188,
+              borderRadius: 22,
+              padding: "14px 18px",
               background: "rgba(58, 214, 156, 0.12)",
               border: "1px solid rgba(58, 214, 156, 0.22)",
             }}
           >
-            <div style={{ display: "flex", fontSize: 19, color: "rgba(188, 255, 225, 0.82)" }}>
+            <div style={{ display: "flex", fontSize: 15, color: "rgba(188, 255, 225, 0.82)" }}>
               YES
             </div>
-            <div style={{ display: "flex", marginTop: 10, fontSize: 60, fontWeight: 800 }}>
+            <div style={{ display: "flex", marginTop: 6, fontSize: 44, fontWeight: 800 }}>
               {yesPercent}%
             </div>
-            <div style={{ display: "flex", marginTop: 8, fontSize: 22, color: "rgba(188, 255, 225, 0.88)" }}>
+            <div style={{ display: "flex", marginTop: 4, fontSize: 15, color: "rgba(188, 255, 225, 0.88)" }}>
               Implied price {impliedYesPrice}
             </div>
           </div>
@@ -232,20 +235,20 @@ export default async function Image({
             style={{
               display: "flex",
               flexDirection: "column",
-              width: 206,
-              borderRadius: 28,
-              padding: "22px 24px",
+              width: 188,
+              borderRadius: 22,
+              padding: "14px 18px",
               background: "rgba(255, 112, 112, 0.12)",
               border: "1px solid rgba(255, 112, 112, 0.22)",
             }}
           >
-            <div style={{ display: "flex", fontSize: 19, color: "rgba(255, 206, 206, 0.82)" }}>
+            <div style={{ display: "flex", fontSize: 15, color: "rgba(255, 206, 206, 0.82)" }}>
               NO
             </div>
-            <div style={{ display: "flex", marginTop: 10, fontSize: 60, fontWeight: 800 }}>
+            <div style={{ display: "flex", marginTop: 6, fontSize: 44, fontWeight: 800 }}>
               {noPercent}%
             </div>
-            <div style={{ display: "flex", marginTop: 8, fontSize: 22, color: "rgba(255, 206, 206, 0.88)" }}>
+            <div style={{ display: "flex", marginTop: 4, fontSize: 15, color: "rgba(255, 206, 206, 0.88)" }}>
               Implied price {impliedNoPrice}
             </div>
           </div>
@@ -265,17 +268,17 @@ export default async function Image({
               style={{
                 display: "flex",
                 flexDirection: "column",
-                width: stat.label === "Traders" ? 150 : 268,
-                borderRadius: 24,
-                padding: "18px 20px",
+                width: stat.label === "Traders" ? 118 : stat.label === "Volume" ? 142 : 300,
+                borderRadius: 20,
+                padding: "14px 16px",
                 background: "rgba(255, 255, 255, 0.06)",
                 border: "1px solid rgba(255, 255, 255, 0.1)",
               }}
             >
-              <div style={{ display: "flex", fontSize: 17, color: "rgba(214, 225, 255, 0.66)" }}>
+              <div style={{ display: "flex", fontSize: 14, color: "rgba(214, 225, 255, 0.66)" }}>
                 {stat.label}
               </div>
-              <div style={{ display: "flex", marginTop: 10, fontSize: 28, fontWeight: 700, lineHeight: 1.15 }}>
+              <div style={{ display: "flex", marginTop: 8, fontSize: 24, fontWeight: 700, lineHeight: 1.1 }}>
                 {stat.value}
               </div>
             </div>
@@ -286,9 +289,9 @@ export default async function Image({
           style={{
             display: "flex",
             flexDirection: "column",
-            marginTop: 22,
-            borderRadius: 30,
-            padding: "22px 24px 18px",
+            marginTop: 16,
+            borderRadius: 26,
+            padding: "16px 18px 14px",
             background: "rgba(9, 21, 39, 0.86)",
             border: "1px solid rgba(101, 167, 255, 0.18)",
           }}
@@ -300,8 +303,8 @@ export default async function Image({
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div style={{ display: "flex", fontSize: 24, fontWeight: 700 }}>Probability History</div>
-              <div style={{ display: "flex", fontSize: 17, color: "rgba(214, 225, 255, 0.66)" }}>
+              <div style={{ display: "flex", fontSize: 20, fontWeight: 700 }}>Probability History</div>
+              <div style={{ display: "flex", fontSize: 15, color: "rgba(214, 225, 255, 0.66)" }}>
                 {market.chart.length > 0
                   ? `${formatShortDate(market.chart[0].timestamp)} to ${formatShortDate(
                       market.chart[market.chart.length - 1].timestamp,
@@ -313,16 +316,16 @@ export default async function Image({
             <div
               style={{
                 display: "flex",
-                marginTop: 18,
-                borderRadius: 22,
-                padding: "20px 20px 16px",
-                width: 1054,
-                height: 272,
+                marginTop: 12,
+                borderRadius: 18,
+                padding: "14px 16px 12px",
+                width: 1090,
+                height: 210,
                 background: "rgba(255, 255, 255, 0.03)",
                 border: "1px solid rgba(255, 255, 255, 0.08)",
               }}
             >
-              <svg width="1012" height="235" viewBox="0 0 940 235">
+              <svg width="1056" height="184" viewBox="0 0 940 235">
                 <defs>
                   <linearGradient id="rocketOgGradient" x1="0" x2="0" y1="0" y2="1">
                     <stop offset="0%" stopColor="#65a7ff" stopOpacity="0.58" />
@@ -362,8 +365,8 @@ export default async function Image({
               style={{
                 display: "flex",
                 justifyContent: "space-between",
-                marginTop: 16,
-                fontSize: 18,
+                marginTop: 10,
+                fontSize: 15,
                 color: "rgba(214, 225, 255, 0.68)",
               }}
             >
