@@ -1,9 +1,28 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 
+function toRelativeAppPath(url: string | null | undefined, fallbackPath: string) {
+  if (!url) {
+    return fallbackPath;
+  }
+
+  if (url.startsWith("/")) {
+    return url;
+  }
+
+  try {
+    const parsed = new URL(url);
+    return `${parsed.pathname}${parsed.search}${parsed.hash}` || fallbackPath;
+  } catch {
+    return fallbackPath;
+  }
+}
+
 export function LocalLoginForm() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -28,7 +47,8 @@ export function LocalLoginForm() {
           return;
         }
 
-        window.location.href = result.url ?? "/";
+        router.push(toRelativeAppPath(result.url, "/"));
+        router.refresh();
       }}
     >
       <div className="eyebrow">Local login</div>

@@ -45,7 +45,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ market }, { status: 201 });
     }
 
-    return NextResponse.redirect(new URL(`/markets/${market.slug}`, request.url), 303);
+    return new NextResponse(null, {
+      status: 303,
+      headers: {
+        Location: `/markets/${market.slug}`,
+      },
+    });
   } catch (error) {
     const message =
       error instanceof ZodError

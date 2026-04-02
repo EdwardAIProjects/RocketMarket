@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Rocket } from "lucide-react";
+import { LogoutButton } from "@/components/logout-button";
 import { isDemoMode, isLocalMode } from "@/lib/env";
 import { formatMoney } from "@/lib/format";
 import { getCurrentSession, getCurrentUser } from "@/lib/auth/session";
@@ -67,16 +68,7 @@ export async function TopNav() {
               <span className="hidden text-sm text-[color:var(--muted)] sm:inline">
                 {session.user.email}
               </span>
-              <Link
-                className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-slate-950 transition hover:opacity-90"
-                href={
-                  isLocalMode() || !isDemoMode()
-                    ? "/api/auth/signout?callbackUrl=/login"
-                    : "/api/auth/signout"
-                }
-              >
-                Log out
-              </Link>
+              <LogoutButton />
             </div>
           ) : (
             !isDemoMode() ? (
