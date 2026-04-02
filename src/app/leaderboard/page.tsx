@@ -1,6 +1,6 @@
 import { Trophy } from "lucide-react";
 import { getLeaderboard } from "@/lib/data/service";
-import { formatMoney } from "@/lib/format";
+import { formatMoney, formatSignedMoney } from "@/lib/format";
 
 export default async function LeaderboardPage() {
   const leaderboard = await getLeaderboard();
@@ -56,7 +56,7 @@ export default async function LeaderboardPage() {
                     Unrealized PnL
                   </div>
                   <div className="mt-1 text-lg font-semibold">
-                    {formatMoney(entry.unrealizedPnl)}
+                    {formatSignedMoney(entry.unrealizedPnl)}
                   </div>
                 </div>
                 <div>
@@ -64,7 +64,7 @@ export default async function LeaderboardPage() {
                     Closed Profit / Loss
                   </div>
                   <div className="mt-1 text-lg font-semibold">
-                    {formatMoney(entry.realizedPnl)}
+                    {formatSignedMoney(entry.realizedPnl)}
                   </div>
                 </div>
                 <div>

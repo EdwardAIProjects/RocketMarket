@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { formatMoney } from "@/lib/format";
+import { formatMoney, formatSignedMoney } from "@/lib/format";
 import type { LeaderboardEntry } from "@/lib/types";
 
 export function HomeLeaderboard({
@@ -49,10 +49,10 @@ export function HomeLeaderboard({
                 {formatMoney(entry.portfolioValue)}
               </div>
               <div className="mt-1 text-xs text-[color:var(--muted)]">
-                Open {formatMoney(entry.unrealizedPnl)}
+                Open {formatSignedMoney(entry.unrealizedPnl)}
               </div>
               <div className="mt-1 text-xs text-[color:var(--muted)]">
-                Closed {formatMoney(entry.realizedPnl)}
+                Closed {formatSignedMoney(entry.realizedPnl)}
               </div>
             </div>
           </div>

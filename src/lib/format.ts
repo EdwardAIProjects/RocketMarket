@@ -6,6 +6,20 @@ export function formatMoney(value: number) {
   }).format(value);
 }
 
+export function formatSignedMoney(value: number) {
+  const formatted = formatMoney(Math.abs(value));
+
+  if (value > 0) {
+    return `+${formatted}`;
+  }
+
+  if (value < 0) {
+    return `-${formatted}`;
+  }
+
+  return formatMoney(0);
+}
+
 export function formatProbability(value: number) {
   return `${Math.round(value * 100)}%`;
 }

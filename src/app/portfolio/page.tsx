@@ -2,7 +2,7 @@ import { BankruptcyPanel } from "@/components/bankruptcy-panel";
 import Link from "next/link";
 import { requireCurrentUser } from "@/lib/auth/session";
 import { getPortfolio } from "@/lib/data/service";
-import { formatMoney, formatProbability } from "@/lib/format";
+import { formatMoney, formatProbability, formatSignedMoney } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -33,13 +33,13 @@ export default async function PortfolioPage() {
           <div className="rounded-[24px] border border-[color:var(--line)] bg-white/4 p-5">
             <div className="text-sm text-[color:var(--muted)]">Unrealized PnL</div>
             <div className="mt-2 text-3xl font-semibold">
-              {formatMoney(portfolio.unrealizedPnl)}
+              {formatSignedMoney(portfolio.unrealizedPnl)}
             </div>
           </div>
           <div className="rounded-[24px] border border-[color:var(--line)] bg-white/4 p-5">
             <div className="text-sm text-[color:var(--muted)]">Closed Profit / Loss</div>
             <div className="mt-2 text-3xl font-semibold">
-              {formatMoney(portfolio.realizedPnl)}
+              {formatSignedMoney(portfolio.realizedPnl)}
             </div>
           </div>
         </div>
