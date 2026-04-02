@@ -49,7 +49,10 @@ export function HomeLeaderboard({
                 {formatMoney(entry.portfolioValue)}
               </div>
               <div className="mt-1 text-xs text-[color:var(--muted)]">
-                PnL {formatMoney(entry.realizedPnl)}
+                Open {formatMoney(entry.unrealizedPnl)}
+              </div>
+              <div className="mt-1 text-xs text-[color:var(--muted)]">
+                Closed {formatMoney(entry.realizedPnl)}
               </div>
             </div>
           </div>

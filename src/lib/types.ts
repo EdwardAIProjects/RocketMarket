@@ -72,6 +72,7 @@ export interface PortfolioSnapshot {
   cashBalance: number;
   estimatedValue: number;
   realizedPnl: number;
+  unrealizedPnl: number;
   positions: Position[];
 }
 
@@ -80,6 +81,7 @@ export interface LeaderboardEntry {
   portfolioValue: number;
   cashBalance: number;
   realizedPnl: number;
+  unrealizedPnl: number;
   wins: number;
   losses: number;
 }

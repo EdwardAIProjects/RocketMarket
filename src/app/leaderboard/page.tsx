@@ -37,7 +37,7 @@ export default async function LeaderboardPage() {
               <div className="grid gap-4 text-right sm:grid-cols-3 sm:text-left">
                 <div>
                   <div className="text-xs uppercase tracking-[0.18em] text-[color:var(--muted)]">
-                    Value
+                    Portfolio Value
                   </div>
                   <div className="mt-1 text-lg font-semibold">
                     {formatMoney(entry.portfolioValue)}
@@ -53,7 +53,15 @@ export default async function LeaderboardPage() {
                 </div>
                 <div>
                   <div className="text-xs uppercase tracking-[0.18em] text-[color:var(--muted)]">
-                    Realized PnL
+                    Unrealized PnL
+                  </div>
+                  <div className="mt-1 text-lg font-semibold">
+                    {formatMoney(entry.unrealizedPnl)}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs uppercase tracking-[0.18em] text-[color:var(--muted)]">
+                    Closed Profit / Loss
                   </div>
                   <div className="mt-1 text-lg font-semibold">
                     {formatMoney(entry.realizedPnl)}

@@ -174,6 +174,7 @@ export const demoPortfolio: PortfolioSnapshot = {
   cashBalance: 6820,
   estimatedValue: 9265,
   realizedPnl: 415,
+  unrealizedPnl: 2030,
   positions: [
     {
       marketId: demoMarketIds.rail,
@@ -204,6 +205,7 @@ export const demoLeaderboard: LeaderboardEntry[] = [
     portfolioValue: 9265,
     cashBalance: 6820,
     realizedPnl: 415,
+    unrealizedPnl: 2030,
     wins: 7,
     losses: 3,
   },
@@ -212,6 +214,7 @@ export const demoLeaderboard: LeaderboardEntry[] = [
     portfolioValue: 8840,
     cashBalance: 7310,
     realizedPnl: 190,
+    unrealizedPnl: 1340,
     wins: 5,
     losses: 4,
   },
@@ -220,6 +223,7 @@ export const demoLeaderboard: LeaderboardEntry[] = [
     portfolioValue: 8125,
     cashBalance: 5600,
     realizedPnl: -110,
+    unrealizedPnl: 980,
     wins: 4,
     losses: 5,
   },

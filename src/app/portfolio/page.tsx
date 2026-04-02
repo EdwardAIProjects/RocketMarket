@@ -31,7 +31,13 @@ export default async function PortfolioPage() {
             </div>
           </div>
           <div className="rounded-[24px] border border-[color:var(--line)] bg-white/4 p-5">
-            <div className="text-sm text-[color:var(--muted)]">Realized PnL</div>
+            <div className="text-sm text-[color:var(--muted)]">Unrealized PnL</div>
+            <div className="mt-2 text-3xl font-semibold">
+              {formatMoney(portfolio.unrealizedPnl)}
+            </div>
+          </div>
+          <div className="rounded-[24px] border border-[color:var(--line)] bg-white/4 p-5">
+            <div className="text-sm text-[color:var(--muted)]">Closed Profit / Loss</div>
             <div className="mt-2 text-3xl font-semibold">
               {formatMoney(portfolio.realizedPnl)}
             </div>

@@ -405,6 +405,28 @@ function positionCostBasis(position: PositionRow) {
   );
 }
 
+function positionMarkedValue(input: {
+  yesShares: number;
+  noShares: number;
+  currentProbability: number;
+}) {
+  return (
+    input.yesShares * input.currentProbability +
+    input.noShares * (1 - input.currentProbability)
+  );
+}
+
+function resolvedWinLossCounts<T extends { realizedPnl: number; marketStatus?: Market["status"] }>(
+  entries: T[],
+) {
+  const resolvedEntries = entries.filter((entry) => entry.marketStatus === "resolved");
+
+  return {
+    wins: resolvedEntries.filter((entry) => entry.realizedPnl > 0).length,
+    losses: resolvedEntries.filter((entry) => entry.realizedPnl < 0).length,
+  };
+}
+
 function settlementPerShare(
   outcome: ResolutionPayload["outcome"],
   percentYes = 0.5,
@@ -531,18 +553,23 @@ function buildLocalPortfolio(state: LocalState, user: LocalUser): PortfolioSnaps
   const estimatedValue =
     user.cashBalance +
     positionsView.reduce(
-      (sum, position) =>
-        sum +
-        position.yesShares * position.currentProbability +
-        position.noShares * (1 - position.currentProbability),
+      (sum, position) => sum + positionMarkedValue(position),
       0,
     );
+  const unrealizedPnl = positionsView.reduce(
+    (sum, position) =>
+      sum +
+      (positionMarkedValue(position) -
+        (position.yesShares * position.avgYesPrice + position.noShares * position.avgNoPrice)),
+    0,
+  );
 
   return {
     user: localUserToSummary(user),
     cashBalance: user.cashBalance,
     estimatedValue,
     realizedPnl: userPositions.reduce((sum, position) => sum + position.realizedPnl, 0),
+    unrealizedPnl,
     positions: positionsView,
   };
 }
@@ -1877,12 +1904,16 @@ export async function getPortfolio(userId?: string): Promise<PortfolioSnapshot> 
   const estimatedValue =
     parseNumber(user.cashBalance) +
     positionsView.reduce(
-      (sum, position) =>
-        sum +
-        position.yesShares * position.currentProbability +
-        position.noShares * (1 - position.currentProbability),
+      (sum, position) => sum + positionMarkedValue(position),
       0,
     );
+  const unrealizedPnl = positionsView.reduce(
+    (sum, position) =>
+      sum +
+      (positionMarkedValue(position) -
+        (position.yesShares * position.avgYesPrice + position.noShares * position.avgNoPrice)),
+    0,
+  );
 
   return {
     user: userToSummary(user),
@@ -1892,6 +1923,7 @@ export async function getPortfolio(userId?: string): Promise<PortfolioSnapshot> 
       (sum, position) => sum + parseNumber(position.realizedPnl),
       0,
     ),
+    unrealizedPnl,
     positions: positionsView,
   };
 }
@@ -1978,7 +2010,32 @@ export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
     return state.users
       .map((user) => {
         const userPositions = state.positions.filter((position) => position.userId === user.id);
+        const userPositionsWithMarkets = userPositions
+          .map((position) => {
+            const market = state.markets.find((entry) => entry.id === position.marketId);
+            return market ? { position, market } : null;
+          })
+          .filter(
+            (
+              entry,
+            ): entry is {
+              position: (typeof userPositions)[number];
+              market: (typeof state.markets)[number];
+            } => entry !== null,
+          );
         const openValue = userPositions.reduce((sum, position) => {
+          const market = state.markets.find((entry) => entry.id === position.marketId);
+          if (!market) {
+            return sum;
+          }
+
+          return sum + positionMarkedValue({
+            yesShares: position.yesShares,
+            noShares: position.noShares,
+            currentProbability: market.currentProbability,
+          });
+        }, 0);
+        const unrealizedPnl = userPositions.reduce((sum, position) => {
           const market = state.markets.find((entry) => entry.id === position.marketId);
           if (!market) {
             return sum;
@@ -1986,18 +2043,30 @@ export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
 
           return (
             sum +
-            position.yesShares * market.currentProbability +
-            position.noShares * (1 - market.currentProbability)
+            (positionMarkedValue({
+              yesShares: position.yesShares,
+              noShares: position.noShares,
+              currentProbability: market.currentProbability,
+            }) -
+              (position.yesShares * position.avgYesPrice +
+                position.noShares * position.avgNoPrice))
           );
         }, 0);
+        const resolvedCounts = resolvedWinLossCounts(
+          userPositionsWithMarkets.map(({ position, market }) => ({
+            realizedPnl: position.realizedPnl,
+            marketStatus: market.status,
+          })),
+        );
 
         return {
           user: localUserToSummary(user),
           portfolioValue: user.cashBalance + openValue,
           cashBalance: user.cashBalance,
           realizedPnl: userPositions.reduce((sum, position) => sum + position.realizedPnl, 0),
-          wins: userPositions.filter((position) => position.realizedPnl > 0).length,
-          losses: userPositions.filter((position) => position.realizedPnl < 0).length,
+          unrealizedPnl,
+          wins: resolvedCounts.wins,
+          losses: resolvedCounts.losses,
         };
       })
       .sort((a, b) => b.portfolioValue - a.portfolioValue);
@@ -2022,7 +2091,7 @@ export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
       : await db.select().from(markets).where(inArray(markets.id, marketIds));
   const marketMap = new Map(marketRows.map((market) => [market.id, market]));
 
-  const byUser = new Map<string, { value: number; realized: number }>();
+  const byUser = new Map<string, { value: number; realized: number; unrealized: number }>();
 
   for (const position of openPositions) {
     const market = marketMap.get(position.marketId);
@@ -2030,27 +2099,38 @@ export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
       continue;
     }
 
-    const openValue =
-      parseNumber(position.yesShares) * parseNumber(market.currentProbability) +
-      parseNumber(position.noShares) * (1 - parseNumber(market.currentProbability));
+    const openValue = positionMarkedValue({
+      yesShares: parseNumber(position.yesShares),
+      noShares: parseNumber(position.noShares),
+      currentProbability: parseNumber(market.currentProbability),
+    });
+    const costBasis = positionCostBasis(position);
 
-    const current = byUser.get(position.userId) ?? { value: 0, realized: 0 };
+    const current = byUser.get(position.userId) ?? { value: 0, realized: 0, unrealized: 0 };
     current.value += openValue;
     current.realized += parseNumber(position.realizedPnl);
+    current.unrealized += openValue - costBasis;
     byUser.set(position.userId, current);
   }
 
   return userRows
     .map((user) => {
-      const aggregate = byUser.get(user.id) ?? { value: 0, realized: 0 };
+      const aggregate = byUser.get(user.id) ?? { value: 0, realized: 0, unrealized: 0 };
       const userPositions = openPositions.filter((position) => position.userId === user.id);
+      const resolvedCounts = resolvedWinLossCounts(
+        userPositions.map((position) => ({
+          realizedPnl: parseNumber(position.realizedPnl),
+          marketStatus: marketMap.get(position.marketId)?.status,
+        })),
+      );
       return {
         user: userToSummary(user),
         portfolioValue: parseNumber(user.cashBalance) + aggregate.value,
         cashBalance: parseNumber(user.cashBalance),
         realizedPnl: aggregate.realized,
-        wins: userPositions.filter((position) => parseNumber(position.realizedPnl) > 0).length,
-        losses: userPositions.filter((position) => parseNumber(position.realizedPnl) < 0).length,
+        unrealizedPnl: aggregate.unrealized,
+        wins: resolvedCounts.wins,
+        losses: resolvedCounts.losses,
       };
     })
     .sort((a, b) => b.portfolioValue - a.portfolioValue);
