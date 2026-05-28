@@ -46,7 +46,7 @@ export const demoUsers: UserSummary[] = [
 
 export const demoLocalUser = demoUsers[0];
 
-const now = new Date("2026-03-30T10:00:00.000Z");
+const now = new Date();
 
 function demoAmmState(probability: number): AmmState {
   return createCpmmState(probability);
