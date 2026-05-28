@@ -10,6 +10,7 @@ export const env = {
     process.env.SLACK_VERIFICATION_CODE_TTL_MINUTES ?? "10",
   ),
   localDevMode: process.env.LOCAL_DEV_MODE === "true",
+  hideDemoHeader: process.env.HIDE_DEMO_HEADER === "true",
   localStatePath: process.env.LOCAL_STATE_PATH ?? "/tmp/rocketmarket-local.json",
 };
 

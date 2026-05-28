@@ -63,7 +63,7 @@ npm install
 npm run dev
 ```
 
-If `DATABASE_URL` is not set, the app boots into demo mode with fixture data so the UI can still be explored.
+If `DATABASE_URL` is not set, the app boots into demo mode with fixture data so the UI can still be explored. Set `HIDE_DEMO_HEADER=true` to hide the demo-mode label in the top navigation while keeping demo-mode behavior enabled.
 
 ## Local development mode
 

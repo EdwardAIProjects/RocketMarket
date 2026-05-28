@@ -127,6 +127,18 @@ Behavior:
 
 This mode is intentional and should remain working. It is the preferred way to test the end-to-end UX without production dependencies.
 
+### Demo mode
+
+Purpose:
+
+- read-only fixture-data exploration when `DATABASE_URL` is unset and `LOCAL_DEV_MODE` is not enabled
+
+Behavior:
+
+- uses in-memory demo fixture data instead of Postgres or the local JSON state store
+- hides sign-in and write flows
+- shows a demo-mode label in the top navigation unless `HIDE_DEMO_HEADER=true`
+
 ### Team mode
 
 Purpose:

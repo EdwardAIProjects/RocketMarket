@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Rocket } from "lucide-react";
 import { LogoutButton } from "@/components/logout-button";
-import { isDemoMode, isLocalMode } from "@/lib/env";
+import { env, isDemoMode, isLocalMode } from "@/lib/env";
 import { formatMoney } from "@/lib/format";
 import { getCurrentSession, getCurrentUser } from "@/lib/auth/session";
 
@@ -17,6 +17,8 @@ export async function TopNav() {
     getCurrentSession(),
     getCurrentUser(),
   ]);
+  const demoMode = isDemoMode();
+  const localMode = isLocalMode();
   const visibleNavItems =
     currentUser?.role === "admin"
       ? [...navItems, { href: "/admin/markets", label: "Admin" }]
@@ -48,12 +50,12 @@ export async function TopNav() {
         </nav>
 
         <div className="flex items-center gap-3">
-          {isLocalMode() && (
+          {localMode && (
             <span className="rounded-full border border-dashed border-[color:var(--line)] px-3 py-1 text-xs font-medium text-[color:var(--muted)]">
               Local mode
             </span>
           )}
-          {isDemoMode() && (
+          {demoMode && !env.hideDemoHeader && (
             <span className="rounded-full border border-dashed border-[color:var(--line)] px-3 py-1 text-xs font-medium text-[color:var(--muted)]">
               Demo mode
             </span>
@@ -71,7 +73,7 @@ export async function TopNav() {
               <LogoutButton />
             </div>
           ) : (
-            !isDemoMode() ? (
+            !demoMode ? (
               <Link
                 className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-slate-950 transition hover:opacity-90"
                 href="/login"
