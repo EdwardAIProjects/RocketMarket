@@ -2,6 +2,8 @@
 
 RocketMarket is a play-money prediction market for UBCRocket. It uses a binary Maniswap-style CPMM for instant YES/NO trades, plus an admin-backed resolution flow for closing markets and paying out fake money.
 
+![alt text](demo.png)
+
 ## Project goal
 
 This project exists to ship an internal, lightweight, prediction-market-style web app for UBCRocket. The product should feel fun and legible, not financially serious: teammates create binary markets about launch outcomes, budgets, testing milestones, and other team events, then trade with fake money and settle those markets through an explicit resolver/admin flow.
